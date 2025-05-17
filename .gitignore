@@ -32,3 +32,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Arcihvos a ignorar ###
+src/main/resources/application.yml
