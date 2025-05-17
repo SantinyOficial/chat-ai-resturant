@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: peter
+  ai:
+    openai:
+      api-key: 
+      base-url: 
+      chat:
+        options:
+          model: 
+        
+  data:
+    mongodb:
+      uri:
+      
