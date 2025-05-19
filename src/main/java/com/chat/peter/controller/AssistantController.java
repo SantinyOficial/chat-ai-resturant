@@ -28,9 +28,7 @@ public class AssistantController {
     public AssistantController(AssistantService assistantService, ConversationService conversationService) {
         this.assistantService = assistantService;
         this.conversationService = conversationService;
-    }
-
-    /**
+    }    /**
      * Endpoint para enviar un mensaje al asistente y recibir una respuesta
      */
     @PostMapping("/chat")
@@ -38,12 +36,22 @@ public class AssistantController {
         // Determinar si se está creando una nueva conversación
         boolean isNewConversation = request.getConversationId() == null;
         
-        // Procesar el mensaje
-        ChatMessage responseMessage = assistantService.processUserMessage(
-                request.getMessage(), 
-                request.getConversationId(),
-                request.getUserId()
-        );
+        // Procesar el mensaje con información contextual de pedidos
+        ChatMessage responseMessage;
+        if (request.getPedidoInfo() != null) {
+            responseMessage = assistantService.processUserMessageWithContext(
+                    request.getMessage(), 
+                    request.getConversationId(),
+                    request.getUserId(),
+                    request.getPedidoInfo()
+            );
+        } else {
+            responseMessage = assistantService.processUserMessage(
+                    request.getMessage(), 
+                    request.getConversationId(),
+                    request.getUserId()
+            );
+        }
         
         // Obtener el ID de la conversación (que puede ser nuevo)
         String conversationId = responseMessage.getConversationId();
@@ -51,7 +59,7 @@ public class AssistantController {
         // Construir y devolver la respuesta
         ChatResponse response = new ChatResponse(responseMessage, conversationId, isNewConversation);
         return ResponseEntity.ok(response);
-    }    /**
+    }/**
      * Endpoint para obtener todas las conversaciones con resumen
      */
     @GetMapping("/conversations/summaries")

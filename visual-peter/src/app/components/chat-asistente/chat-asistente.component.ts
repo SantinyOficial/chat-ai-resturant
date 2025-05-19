@@ -2,15 +2,27 @@ import { Component, ViewChild, ElementRef, OnInit, AfterViewChecked } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssistantService, ChatRequest, ChatResponse, ChatMessage } from '../../services/assistant.service';
+import { RealizarPedidoComponent } from '../realizar-pedido/realizar-pedido.component';
+import { Pedido } from '../../services/pedido.service';
+import { environment } from '../../../environments/environment';
+
+// Interfaz local para mensajes en el chat (para uso en UI)
+interface UIChatMessage {
+  sender: 'user' | 'bot';
+  text: string;
+  time: string;
+}
 
 @Component({
   selector: 'app-chat-asistente',
   standalone: true,
-  imports: [CommonModule, FormsModule],  template: `
+  imports: [CommonModule, FormsModule, RealizarPedidoComponent],
+  template: `
     <div class="container">
       <h2><i class="material-icons">support_agent</i> Chat Asistente</h2>
       <div class="chat-container">
-        <div class="chat-header">          <div class="agent-info">
+        <div class="chat-header">
+          <div class="agent-info">
             <i class="material-icons agent-avatar">restaurant</i>
             <span class="agent-name">Asistente de Banquetes Peter</span>
           </div>
@@ -49,6 +61,13 @@ import { AssistantService, ChatRequest, ChatResponse, ChatMessage } from '../../
           </div>
         </div>
 
+        <div class="chat-actions">
+          <button class="action-button" (click)="abrirRealizarPedido()">
+            <i class="material-icons">restaurant_menu</i>
+            Realizar Pedido
+          </button>
+        </div>
+
         <div class="chat-input">
           <input
             type="text"
@@ -63,6 +82,14 @@ import { AssistantService, ChatRequest, ChatResponse, ChatMessage } from '../../
         </div>
       </div>
     </div>
+
+    <!-- Modal para realizar pedido -->
+    <app-realizar-pedido
+      *ngIf="mostrarRealizarPedido"
+      [clienteId]="clienteId"
+      (pedidoCreado)="onPedidoCreado($event)"
+      (cerrarModal)="cerrarRealizarPedido()">
+    </app-realizar-pedido>
   `,styles: [`
     .container {
       padding: 0;
@@ -294,11 +321,39 @@ import { AssistantService, ChatRequest, ChatResponse, ChatMessage } from '../../
 
     .typing-indicator span:nth-child(3) {
       animation-delay: 0.4s;
-    }
-
-    @keyframes bounce {
+    }    @keyframes bounce {
       0%, 60%, 100% { transform: translateY(0); }
       30% { transform: translateY(-6px); }
+    }
+
+    .chat-actions {
+      padding: 0 20px 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-button {
+      width: auto;
+      height: auto;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: #333;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .action-button:hover {
+      background: var(--primary-color);
+      color: var(--background-dark);
+    }
+
+    .action-button .material-icons {
+      font-size: 1.1rem;
     }
 
     @media (max-width: 768px) {
@@ -324,15 +379,81 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   userMessage: string = '';
-  messages: {sender: string, text: string, time: string}[] = [];
+  messages: UIChatMessage[] = [];
   loading: boolean = false;
   error: string = '';
   currentConversationId: string | null = null;
 
+  // Modal para realizar pedido
+  mostrarRealizarPedido: boolean = false;
+
+  // ID del cliente (debería ser dinámico basado en el usuario autenticado)
+  clienteId: string = localStorage.getItem('clienteId') || 'cliente-' + Math.floor(Math.random() * 1000);
+
   constructor(private assistantService: AssistantService) {}
+
   ngOnInit(): void {
+    // Guardar clienteId para su uso posterior
+    localStorage.setItem('clienteId', this.clienteId);
+
     // Verificar la conexión con el backend al inicio
     this.checkBackendConnection();
+
+    // Recuperar conversación anterior si existe
+    const savedConversationId = localStorage.getItem('currentConversationId');
+    if (savedConversationId) {
+      const lastActivity = localStorage.getItem('lastChatActivity');
+      // Verificar si la última actividad fue hace menos de 6 minutos (360000ms)
+      if (lastActivity && (Date.now() - parseInt(lastActivity)) < 360000) {
+        this.currentConversationId = savedConversationId;
+        this.loadPreviousMessages();
+      } else {
+        // Si ha pasado más de 6 minutos, limpiar la conversación anterior
+        localStorage.removeItem('currentConversationId');
+        localStorage.removeItem('lastChatActivity');
+      }
+    }
+  }
+
+  /**
+   * Cargar mensajes anteriores de la conversación actual
+   */
+  loadPreviousMessages(): void {
+    if (!this.currentConversationId) return;
+
+    this.loading = true;
+    this.assistantService.getConversationMessages(this.currentConversationId).subscribe({
+      next: (messages) => {
+        // Transformar mensajes del backend al formato de la UI
+        this.messages = messages.map(msg => ({
+          sender: msg.role === 'user' ? 'user' : 'bot',
+          text: msg.content,
+          time: this.formatTimeFromTimestamp(msg.timestamp || '')
+        }));
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar mensajes anteriores:', err);
+        this.loading = false;
+        // Si hay error, mejor empezar una conversación nueva
+        this.currentConversationId = null;
+        localStorage.removeItem('currentConversationId');
+      }
+    });
+  }
+
+  /**
+   * Formatear timestamp del servidor a formato de hora local
+   */
+  formatTimeFromTimestamp(timestamp: string): string {
+    if (!timestamp) return 'Desconocido';
+
+    try {
+      const date = new Date(timestamp);
+      return date.getHours() + ':' + (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+    } catch (e) {
+      return 'Desconocido';
+    }
   }
 
   checkBackendConnection(): void {
@@ -379,10 +500,11 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
       time: this.formatTime()
     });
 
-    // Crear la solicitud para el backend
+    // Crear la solicitud para el backend con el ID del cliente
     const request: ChatRequest = {
       message: messageText,
-      conversationId: this.currentConversationId || undefined
+      conversationId: this.currentConversationId || undefined,
+      userId: this.clienteId // Incluir ID del cliente para contextualizar la conversación
     };
 
     console.log('Enviando mensaje al backend:', request);
@@ -393,6 +515,10 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
         console.log('Respuesta recibida:', response);
         // Guardar el ID de conversación para futuros mensajes
         this.currentConversationId = response.conversationId;
+
+        // Guardar ID de conversación y tiempo de última actividad
+        localStorage.setItem('currentConversationId', response.conversationId);
+        localStorage.setItem('lastChatActivity', Date.now().toString());
 
         // Agregar la respuesta del bot a la UI
         this.messages.push({
@@ -415,11 +541,15 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
   private tryDirectConnection(request: ChatRequest): void {
     console.log('Intentando conexión directa con el backend');
 
-    const directUrl = 'http://localhost:8080/api/assistant/chat';
+    const directUrl = `${environment.apiUrl}/api/assistant/chat`;
     this.assistantService.sendMessageDirect(request, directUrl).subscribe({
       next: (response: ChatResponse) => {
         console.log('Conexión directa exitosa:', response);
         this.currentConversationId = response.conversationId;
+
+        // Guardar ID de conversación y tiempo de última actividad
+        localStorage.setItem('currentConversationId', response.conversationId);
+        localStorage.setItem('lastChatActivity', Date.now().toString());
 
         this.messages.push({
           sender: 'bot',
@@ -459,5 +589,52 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
     });
 
     this.loading = false;
+  }
+
+  abrirRealizarPedido() {
+    this.mostrarRealizarPedido = true;
+  }
+
+  cerrarRealizarPedido() {
+    this.mostrarRealizarPedido = false;
+  }
+
+  onPedidoCreado(pedido: Pedido) {
+    console.log('Pedido creado:', pedido);
+
+    // Añadir mensaje informativo sobre el pedido creado
+    this.messages.push({
+      sender: 'bot',
+      text: `¡Tu pedido ha sido creado exitosamente! Tu número de pedido es: ${pedido.id}.
+             Puedes consultar el estado de tu pedido en cualquier momento preguntándome o
+             visitando la sección de Pedidos.`,
+      time: this.formatTime()
+    });
+
+    // Cerrar el modal y reiniciar estados
+    this.loading = false;
+    this.cerrarRealizarPedido();
+
+    // Guardar tiempo de última actividad
+    localStorage.setItem('lastChatActivity', Date.now().toString());
+
+    // Enviar un mensaje automático para actualizar el contexto de la conversación
+    if (this.currentConversationId) {
+      const updateRequest: ChatRequest = {
+        message: "Mi pedido fue creado, ¿puedes actualizarme sobre su estado?",
+        conversationId: this.currentConversationId,
+        userId: this.clienteId
+      };
+
+      // No mostrar este mensaje al usuario, solo actualizar el contexto de la conversación
+      this.assistantService.sendMessage(updateRequest).subscribe({
+        next: (response: ChatResponse) => {
+          console.log('Contexto de conversación actualizado con nuevo pedido');
+        },
+        error: (err) => {
+          console.error('Error al actualizar contexto con el nuevo pedido:', err);
+        }
+      });
+    }
   }
 }
