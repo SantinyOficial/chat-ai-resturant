@@ -1,0 +1,141 @@
+<div class="container">
+      <h2><i class="material-icons">edit</i> Gestión de Menús</h2>
+
+      <div class="menu-tabs">
+        <button class="tab-btn" [class.active]="activeTab === 'fijos'" (click)="activeTab = 'fijos'">Menús Fijos</button>
+        <button class="tab-btn" [class.active]="activeTab === 'diarios'" (click)="activeTab = 'diarios'">Menús del Día</button>
+      </div>
+
+      <div class="menu-section" *ngIf="activeTab === 'fijos'">
+        <h3>Menús Fijos</h3>
+        <div class="menu-list">
+          <div class="menu-card" *ngFor="let menu of menusFijos">
+            <div class="menu-card-header">
+              <h4>{{ menu.nombre }}</h4>
+              <span class="menu-tipo">{{ menu.tipo }}</span>
+            </div>
+            <p class="menu-descripcion">{{ menu.descripcion }}</p>
+            <div class="menu-precio">Precio: ${{ menu.precio.toLocaleString() }}</div>
+            <div class="menu-items">
+              <h5>Ítems:</h5>
+              <ul>
+                <li *ngFor="let item of menu.items">
+                  <strong>{{ item.nombre }}</strong> ({{ item.categoria }}): {{ item.descripcion }}
+                </li>
+              </ul>
+            </div>
+            <div class="menu-actions">
+              <button class="action-btn edit" (click)="editarMenu(menu)">
+                <i class="material-icons">edit</i> Editar
+              </button>
+              <button class="action-btn delete" (click)="desactivarMenu(menu.id)">
+                <i class="material-icons">delete</i> Desactivar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-section" *ngIf="activeTab === 'diarios'">
+        <h3>Menús del Día</h3>
+        <div class="menu-list">
+          <div class="menu-card" *ngFor="let menu of menusDiarios">
+            <div class="menu-card-header">
+              <h4>{{ menu.nombre }}</h4>
+              <span class="menu-tipo">{{ menu.tipo }}</span>
+            </div>
+            <p class="menu-descripcion">{{ menu.descripcion }}</p>
+            <div class="menu-precio">Precio: ${{ menu.precio.toLocaleString() }}</div>
+            <div class="menu-items">
+              <h5>Ítems:</h5>
+              <ul>
+                <li *ngFor="let item of menu.items">
+                  <strong>{{ item.nombre }}</strong> ({{ item.categoria }}): {{ item.descripcion }}
+                </li>
+              </ul>
+            </div>
+            <div class="menu-actions">
+              <button class="action-btn edit" (click)="editarMenu(menu)">
+                <i class="material-icons">edit</i> Editar
+              </button>
+              <button class="action-btn delete" (click)="desactivarMenu(menu.id)">
+                <i class="material-icons">delete</i> Desactivar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="botones-accion">
+        <button class="btn-crear" (click)="mostrarFormularioCreacion()">
+          <i class="material-icons">add</i> Crear Nuevo Menú
+        </button>
+      </div>
+
+      <!-- Formulario de creación/edición -->
+      <div class="modal" *ngIf="formularioVisible">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>{{ editando ? 'Editar Menú' : 'Crear Nuevo Menú' }}</h3>
+            <button class="close-btn" (click)="cerrarFormulario()">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="nombre">Nombre:</label>
+              <input type="text" id="nombre" [(ngModel)]="menuActual.nombre" placeholder="Nombre del menú" required>
+            </div>
+            <div class="form-group">
+              <label for="descripcion">Descripción:</label>
+              <textarea id="descripcion" [(ngModel)]="menuActual.descripcion" placeholder="Descripción del menú" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="tipo">Tipo:</label>
+              <select id="tipo" [(ngModel)]="menuActual.tipo" required>
+                <option value="diario">Diario</option>
+                <option value="ejecutivo">Ejecutivo</option>
+                <option value="especial">Especial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="precio">Precio:</label>
+              <input type="number" id="precio" [(ngModel)]="menuActual.precio" min="0" step="0.01" placeholder="0.00" required>
+            </div>
+
+            <h4>Ítems del Menú</h4>
+            <div class="items-container">
+              <div class="item-form" *ngFor="let item of menuActual.items; let i = index">
+                <div class="form-group">
+                  <label>Nombre:</label>
+                  <input type="text" [(ngModel)]="item.nombre" placeholder="Nombre del ítem" required>
+                </div>
+                <div class="form-group">
+                  <label>Descripción:</label>
+                  <input type="text" [(ngModel)]="item.descripcion" placeholder="Descripción del ítem" required>
+                </div>
+                <div class="form-group">
+                  <label>Categoría:</label>
+                  <select [(ngModel)]="item.categoria" required>
+                    <option value="entrada">Entrada</option>
+                    <option value="plato principal">Plato Principal</option>
+                    <option value="postre">Postre</option>
+                  </select>
+                </div>
+                <button class="btn-remove-item" (click)="eliminarItem(i)">
+                  <i class="material-icons">remove_circle</i>
+                </button>
+              </div>
+
+              <button class="btn-add-item" (click)="agregarItem()">
+                <i class="material-icons">add_circle</i> Agregar Ítem
+              </button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" (click)="cerrarFormulario()">Cancelar</button>
+            <button class="btn-save" (click)="guardarMenu()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>

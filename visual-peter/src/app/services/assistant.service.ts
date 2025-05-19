@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface ChatRequest {
   message: string;
@@ -24,12 +25,15 @@ export interface ChatResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AssistantService {
-  private apiUrl = '/api/assistant';
+  private apiUrl = `${environment.apiUrl}/api/assistant`;
 
   constructor(private http: HttpClient) {}
-
   sendMessage(request: ChatRequest): Observable<ChatResponse> {
     return this.http.post<ChatResponse>(`${this.apiUrl}/chat`, request);
+  }
+
+  sendMessageDirect(request: ChatRequest, directUrl: string): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>(directUrl, request);
   }
 
   getAllConversations() {

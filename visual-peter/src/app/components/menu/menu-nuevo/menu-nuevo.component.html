@@ -1,0 +1,104 @@
+<div class="container">
+      <h2><i class="material-icons">restaurant_menu</i> Menú del Restaurante</h2>
+
+      <div class="category-tabs">
+        <button class="tab-btn" [class.active]="selectedCategory === 'all'" (click)="filterCategory('all')">Todos</button>
+        <button class="tab-btn" [class.active]="selectedCategory === 'entrada'" (click)="filterCategory('entrada')">Entradas</button>
+        <button class="tab-btn" [class.active]="selectedCategory === 'plato principal'" (click)="filterCategory('plato principal')">Principales</button>
+        <button class="tab-btn" [class.active]="selectedCategory === 'postre'" (click)="filterCategory('postre')">Postres</button>
+      </div>
+
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Cargando menús...</p>
+      </div>
+
+      <div *ngIf="error" class="error-container">
+        <p>{{ error }}</p>
+        <button class="retry-btn" (click)="cargarMenus()">Reintentar</button>
+      </div>
+
+      <div *ngIf="!loading && !error && allItems.length === 0" class="empty-container">
+        <p>No hay elementos en el menú disponibles.</p>
+      </div>
+
+      <!-- Menús fijos destacados -->
+      <div class="menu-section" *ngIf="!loading && menusFijos.length > 0">
+        <h3><i class="material-icons">star</i> Nuestros Menús Fijos</h3>
+        <div class="menu-grid">
+          <div class="menu-card menu-especial" *ngFor="let menu of menusFijos">
+            <div class="menu-card-header">
+              <h4>{{ menu.nombre }}</h4>
+              <span class="menu-tipo">{{ menu.tipo }}</span>
+            </div>
+            <p>{{ menu.descripcion }}</p>
+            <div class="menu-items-preview">
+              <p *ngFor="let item of menu.items.slice(0, 3)">• {{ item.nombre }}</p>
+              <p *ngIf="menu.items.length > 3">Y más...</p>
+            </div>
+            <div class="card-footer">
+              <span class="price">{{ menu.precio.toLocaleString() }} COP</span>
+              <button class="add-btn"><i class="material-icons">add</i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menú por categorías -->
+      <div *ngIf="!loading && getItemsByCategory('entrada').length > 0 && showCategory('entrada')" class="menu-section">
+        <h3><i class="material-icons">lunch_dining</i> Entradas</h3>
+        <div class="menu-grid">
+          <div class="menu-card" *ngFor="let item of getItemsByCategory('entrada')">
+            <div class="menu-card-image" *ngIf="item.imagen" [style.background-image]="'url(' + item.imagen + ')'">
+              <span class="card-badge" *ngIf="item.popular">Popular</span>
+            </div>
+            <div class="menu-card-content">
+              <h4>{{ item.nombre }}</h4>
+              <p>{{ item.descripcion }}</p>
+              <div class="card-footer">
+                <span class="price" *ngIf="item.precio">${{ item.precio.toLocaleString() }}</span>
+                <button class="add-btn"><i class="material-icons">add</i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && getItemsByCategory('plato principal').length > 0 && showCategory('plato principal')" class="menu-section">
+        <h3><i class="material-icons">restaurant</i> Platos Principales</h3>
+        <div class="menu-grid">
+          <div class="menu-card" *ngFor="let item of getItemsByCategory('plato principal')">
+            <div class="menu-card-image" *ngIf="item.imagen" [style.background-image]="'url(' + item.imagen + ')'">
+              <span class="card-badge" *ngIf="item.popular">Popular</span>
+            </div>
+            <div class="menu-card-content">
+              <h4>{{ item.nombre }}</h4>
+              <p>{{ item.descripcion }}</p>
+              <div class="card-footer">
+                <span class="price" *ngIf="item.precio">${{ item.precio.toLocaleString() }}</span>
+                <button class="add-btn"><i class="material-icons">add</i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && getItemsByCategory('postre').length > 0 && showCategory('postre')" class="menu-section">
+        <h3><i class="material-icons">cake</i> Postres</h3>
+        <div class="menu-grid">
+          <div class="menu-card" *ngFor="let item of getItemsByCategory('postre')">
+            <div class="menu-card-image" *ngIf="item.imagen" [style.background-image]="'url(' + item.imagen + ')'">
+              <span class="card-badge" *ngIf="item.popular">Popular</span>
+            </div>
+            <div class="menu-card-content">
+              <h4>{{ item.nombre }}</h4>
+              <p>{{ item.descripcion }}</p>
+              <div class="card-footer">
+                <span class="price" *ngIf="item.precio">${{ item.precio.toLocaleString() }}</span>
+                <button class="add-btn"><i class="material-icons">add</i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
