@@ -90,10 +90,21 @@
   align-items: center;
 }
 
-.sidebar-menu.collapsed > li {
+.sidebar-menu > li {
+  position: relative;
   width: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar-menu.collapsed > li {
+  width: 70px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .sidebar-section {
@@ -110,6 +121,8 @@
   border-radius: 8px;
   font-family: 'Quicksand', sans-serif;
   width: calc(100% - 30px);
+  position: relative;
+  box-sizing: border-box;
 }
 
 .sidebar-section:hover {
@@ -119,6 +132,17 @@
 .sidebar-section .material-icons {
   margin-right: 12px;
   font-size: 1.5rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.sidebar-section .icon-collapsed {
+  margin: 0 auto;
+  font-size: 1.8rem;
+  position: static;
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 .arrow {
@@ -127,13 +151,15 @@
 }
 
 .menu-text, .arrow {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, width 0.3s ease;
 }
 
 .hidden {
   opacity: 0;
   width: 0;
   overflow: hidden;
+  position: absolute;
+  pointer-events: none;
 }
 
 .submenu {
@@ -198,6 +224,34 @@
 
 .centered {
   margin: 0 auto !important;
+  transform: translateX(0) !important;
+  position: relative !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+.submenu-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-in-out;
+  opacity: 0;
+  width: 100%;
+}
+
+.submenu-wrapper.expanded {
+  max-height: 200px; /* Valor más realista para el submenú */
+  opacity: 1;
+}
+
+.submenu-wrapper.collapsed {
+  max-height: 0;
+}
+
+/* Limpiar estilos redundantes y conflictivos */
+.material-icons-container,
+.sidebar-section.icon-container,
+.centered {
+  display: none;
 }
 
 /* Media queries para responsividad */
@@ -232,19 +286,29 @@
 
 .sidebar-menu.collapsed .sidebar-section {
   justify-content: center;
-  padding: 15px 0;
+  padding: 12px 0;
   display: flex;
   align-items: center;
-  width: 100%;
+  width: 70px;
   margin: 5px 0;
+  position: relative;
+  box-sizing: border-box;
 }
 
-.sidebar-menu.collapsed .sidebar-section .material-icons {
-  margin-right: 0;
+.material-icons.icon-collapsed {
+  margin: 0 auto !important;
   font-size: 1.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  text-align: center;
+}
+
+.sidebar-menu.collapsed .sidebar-section .material-icons {
+  margin: 0 auto;
+  margin-right: 0;
+  margin-left: 0;
 }
 
 .sidebar-logo:hover, .footer-logo:hover {

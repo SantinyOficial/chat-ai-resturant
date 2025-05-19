@@ -28,7 +28,7 @@ body, html {
   color: var(--primary-color);
   padding: 0.8rem 1rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-bottom: 2px solid var(--primary-color);
@@ -37,13 +37,35 @@ body, html {
 }
 
 .navbar-title {
-  font-size: 2.2rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  color: var(--primary-color);
-  font-family: 'Quicksand', sans-serif;
+  font-size: 4rem;
+  font-weight: normal;
+  font-family: 'Great Vibes', cursive;
   text-align: center;
-  flex: 1;
+  margin: 0;
+  color: var(--primary-color);
+  text-shadow:
+    0 0 5px rgba(255, 204, 41, 0.5),
+    0 0 10px rgba(255, 204, 41, 0.3),
+    0 0 15px rgba(255, 204, 41, 0.2),
+    0 0 20px rgba(255, 204, 41, 0.1);
+  animation: neon-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes neon-pulse {
+  from {
+    text-shadow:
+      0 0 5px rgba(255, 204, 41, 0.5),
+      0 0 10px rgba(255, 204, 41, 0.3),
+      0 0 15px rgba(255, 204, 41, 0.2),
+      0 0 20px rgba(255, 204, 41, 0.1);
+  }
+  to {
+    text-shadow:
+      0 0 10px rgba(255, 204, 41, 0.7),
+      0 0 20px rgba(255, 204, 41, 0.5),
+      0 0 30px rgba(255, 204, 41, 0.4),
+      0 0 40px rgba(255, 204, 41, 0.3);
+  }
 }
 
 .content-layout {
@@ -106,7 +128,7 @@ body, html {
 
 @media (max-width: 768px) {
   .navbar-title {
-    font-size: 1.8rem;
+    font-size: 2.5rem;
   }
 
   .content-layout {
@@ -167,7 +189,7 @@ body, html {
   }
 
   .navbar-title {
-    font-size: 1.5rem;
+    font-size: 2rem;
   }
 
   .main-content {

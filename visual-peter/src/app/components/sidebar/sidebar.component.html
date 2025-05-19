@@ -8,38 +8,43 @@
   </button>
 </div>
 
-<ul class="sidebar-menu" [class.collapsed]="sidebarCollapsed">  <li>
-    <span class="sidebar-section" (click)="toggleClientes()">
-      <i class="material-icons" [class.centered]="sidebarCollapsed">people</i>
-      <span class="menu-text" [class.hidden]="sidebarCollapsed">Clientes</span>
-      <span class="arrow" [class.hidden]="sidebarCollapsed">{{ clientesOpen ? '▼' : '►' }}</span>
-    </span>
-    <ul class="submenu" *ngIf="clientesOpen && !sidebarCollapsed">
-      <li><a routerLink="/chat-asistente" routerLinkActive="active">
-        <i class="material-icons">chat</i>
-        <span>Chat Asistente</span>
-      </a></li>
-      <li><a routerLink="/pedidos" routerLinkActive="active">
-        <i class="material-icons">restaurant</i>
-        <span>Pedidos</span>
-      </a></li>
-    </ul>
+<ul class="sidebar-menu" [class.collapsed]="sidebarCollapsed">
+  <li>
+    <div class="sidebar-section" (click)="toggleClientes()">
+      <i class="material-icons" [class.icon-collapsed]="sidebarCollapsed">people</i>
+      <span class="menu-text" *ngIf="!sidebarCollapsed">Clientes</span>
+      <span class="arrow" *ngIf="!sidebarCollapsed">{{ clientesOpen ? '▼' : '►' }}</span>
+    </div>
+    <div class="submenu-wrapper" [class.expanded]="clientesOpen && !sidebarCollapsed" [class.collapsed]="!clientesOpen || sidebarCollapsed">
+      <ul class="submenu">
+        <li><a routerLink="/chat-asistente" routerLinkActive="active">
+          <i class="material-icons">chat</i>
+          <span>Chat Asistente</span>
+        </a></li>
+        <li><a routerLink="/pedidos" routerLinkActive="active">
+          <i class="material-icons">restaurant</i>
+          <span>Pedidos</span>
+        </a></li>
+      </ul>
+    </div>
   </li>  <li>
-    <span class="sidebar-section" (click)="toggleMeseros()">
-      <i class="material-icons" [class.centered]="sidebarCollapsed">room_service</i>
-      <span class="menu-text" [class.hidden]="sidebarCollapsed">Meseros</span>
-      <span class="arrow" [class.hidden]="sidebarCollapsed">{{ meserosOpen ? '▼' : '►' }}</span>
-    </span>
-    <ul class="submenu" *ngIf="meserosOpen && !sidebarCollapsed">
-      <li><a routerLink="/menu" routerLinkActive="active">
-        <i class="material-icons">restaurant_menu</i>
-        <span>Menú</span>
-      </a></li>
-      <li><a routerLink="/gestion-pedidos" routerLinkActive="active">
-        <i class="material-icons">assignment</i>
-        <span>Gestión Pedidos</span>
-      </a></li>
-    </ul>
+    <div class="sidebar-section" (click)="toggleMeseros()">
+      <i class="material-icons" [class.icon-collapsed]="sidebarCollapsed">room_service</i>
+      <span class="menu-text" *ngIf="!sidebarCollapsed">Meseros</span>
+      <span class="arrow" *ngIf="!sidebarCollapsed">{{ meserosOpen ? '▼' : '►' }}</span>
+    </div>
+    <div class="submenu-wrapper" [class.expanded]="meserosOpen && !sidebarCollapsed" [class.collapsed]="!meserosOpen || sidebarCollapsed">
+      <ul class="submenu">
+        <li><a routerLink="/menu" routerLinkActive="active">
+          <i class="material-icons">restaurant_menu</i>
+          <span>Menú</span>
+        </a></li>
+        <li><a routerLink="/gestion-pedidos" routerLinkActive="active">
+          <i class="material-icons">assignment</i>
+          <span>Gestión Pedidos</span>
+        </a></li>
+      </ul>
+    </div>
   </li>
 </ul>
 
