@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #ffcc29;
+  --background-dark: #181818;
+  --background-medium: #222;
+  --transition-speed: 0.3s;
+}
+
+body, html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Quicksand', sans-serif;
+  background: var(--background-dark);
+  overflow-x: hidden;
+}
+
+.main-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.navbar {
+  background: var(--background-dark);
+  color: var(--primary-color);
+  padding: 0.8rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-bottom: 2px solid var(--primary-color);
+  z-index: 10;
+  position: relative;
+}
+
+.navbar-title {
+  font-size: 2.2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+  font-family: 'Quicksand', sans-serif;
+  text-align: center;
+  flex: 1;
+}
+
+.content-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: var(--background-dark);
+  position: relative;
+}
+
+.sidebar {
+  width: 280px;
+  background: var(--background-medium);
+  color: var(--primary-color);
+  padding: 0;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--primary-color);
+  border-radius: 0.5rem;
+  margin: 0.5rem;
+  transition: all var(--transition-speed) ease;
+  overflow: hidden;
+  min-height: 0;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.main-content {
+  flex: 1;
+  background: var(--background-dark);
+  color: #fff;
+  padding: 1.5rem;
+  overflow-y: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  border: 2px solid var(--primary-color);
+  margin: 0.5rem;
+  transition: all var(--transition-speed) ease;
+  position: relative;
+}
+
+.main-content.expanded {
+  margin-left: 80px;
+}
+
+/* Media queries para diseño responsivo */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 250px;
+  }
+
+  .main-content {
+    padding: 1.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-title {
+    font-size: 1.8rem;
+  }
+
+  .content-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: calc(100% - 1rem);
+    margin: 0.5rem;
+    z-index: 100;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    min-height: auto;
+    max-height: 300px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .sidebar.collapsed {
+    height: 50px;
+    min-height: 50px;
+    overflow: hidden;
+  }
+
+  .main-content {
+    margin-bottom: 60px;
+    margin-left: 0.5rem;
+    width: calc(100% - 1rem);
+  }
+
+  .main-content.expanded {
+    margin-left: 0.5rem;
+  }
+
+  /* Mostrar botón de alternancia en móvil siempre visible */
+  .sidebar-header {
+    position: sticky;
+    top: 0;
+    background: var(--background-medium);
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255,204,41,0.3);
+  }
+
+  .sidebar.collapsed .sidebar-header {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.7rem 0;
+  }
+
+  .navbar-title {
+    font-size: 1.5rem;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+}

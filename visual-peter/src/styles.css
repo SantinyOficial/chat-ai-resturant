@@ -1,0 +1,75 @@
+/* Variables globales y estilos generales */
+:root {
+  --primary-color: #ffcc29;
+  --background-dark: #181818;
+  --background-medium: #222;
+  --text-light: #ffffff;
+  --text-primary: #ffcc29;
+  --border-radius: 8px;
+  --box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  --transition-speed: 0.3s;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Quicksand', sans-serif;
+  background-color: var(--background-dark);
+  color: var(--text-light);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+button {
+  font-family: 'Quicksand', sans-serif;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all var(--transition-speed) ease;
+}
+
+input, textarea, select {
+  font-family: 'Quicksand', sans-serif;
+  border-radius: var(--border-radius);
+  padding: 10px;
+  border: 2px solid transparent;
+  transition: all var(--transition-speed) ease;
+}
+
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: all var(--transition-speed) ease;
+}
+
+/* Estilos para scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-medium);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e6b800;
+}
