@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.service';
 
 @Component({
   selector: 'app-gestion-pedidos',
@@ -10,80 +11,63 @@ import { CommonModule } from '@angular/common';
       <h2>Gestión de Pedidos</h2>
 
       <div class="status-filters">
-        <button class="filter-btn active">Todos</button>
-        <button class="filter-btn">Pendientes</button>
-        <button class="filter-btn">En Preparación</button>
-        <button class="filter-btn">Listos</button>
-        <button class="filter-btn">Entregados</button>
+        <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterPedidos('all')">Todos</button>
+        <button class="filter-btn" [class.active]="selectedFilter === 'PENDIENTE'" (click)="filterPedidos('PENDIENTE')">Pendientes</button>
+        <button class="filter-btn" [class.active]="selectedFilter === 'EN_PREPARACION'" (click)="filterPedidos('EN_PREPARACION')">En Preparación</button>
+        <button class="filter-btn" [class.active]="selectedFilter === 'LISTO'" (click)="filterPedidos('LISTO')">Listos</button>
+        <button class="filter-btn" [class.active]="selectedFilter === 'ENTREGADO'" (click)="filterPedidos('ENTREGADO')">Entregados</button>
+        <button class="filter-btn" [class.active]="selectedFilter === 'CANCELADO'" (click)="filterPedidos('CANCELADO')">Cancelados</button>
       </div>
 
       <div class="pedidos-grid">
-        <div class="pedido-card pendiente">
-          <div class="pedido-header">
-            <span class="pedido-id">Pedido #1001</span>
-            <span class="pedido-status">Pendiente</span>
-          </div>
-          <div class="pedido-content">
-            <h4>Detalle del Pedido</h4>
-            <ul class="pedido-items">
-              <li>1 x Ceviche de Camarones</li>
-              <li>2 x Filete de Res</li>
-              <li>1 x Tiramisú</li>
-            </ul>
-            <div class="pedido-info">
-              <p><strong>Mesa:</strong> 5</p>
-              <p><strong>Cliente:</strong> Juan Pérez</p>
-              <p><strong>Hora:</strong> 14:30</p>
-            </div>
-          </div>
-          <div class="pedido-actions">
-            <button class="action-btn accept">Aceptar</button>
-            <button class="action-btn cancel">Cancelar</button>
-          </div>
+        <div *ngIf="filteredPedidos.length === 0" class="no-pedidos">
+          <p>No hay pedidos con el filtro seleccionado.</p>
         </div>
 
-        <div class="pedido-card en-preparacion">
+        <div class="pedido-card" *ngFor="let pedido of filteredPedidos" [ngClass]="pedido.estado.toLowerCase()">
           <div class="pedido-header">
-            <span class="pedido-id">Pedido #1002</span>
-            <span class="pedido-status">En Preparación</span>
+            <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8) || 'Nuevo'}}</span>
+            <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
           </div>
           <div class="pedido-content">
             <h4>Detalle del Pedido</h4>
             <ul class="pedido-items">
-              <li>2 x Ensalada César</li>
-              <li>2 x Pollo a la Plancha</li>
-              <li>2 x Flan de Caramelo</li>
+              <li *ngFor="let item of pedido.items">
+                {{item.cantidad}} x {{item.nombre}}
+              </li>
             </ul>
             <div class="pedido-info">
-              <p><strong>Mesa:</strong> 3</p>
-              <p><strong>Cliente:</strong> María López</p>
-              <p><strong>Hora:</strong> 14:45</p>
+              <p><strong>Mesa:</strong> {{pedido.mesa}}</p>
+              <p><strong>Cliente:</strong> {{pedido.clienteNombre}}</p>
+              <p><strong>Hora:</strong> {{pedido.fechaCreacion | date:'HH:mm'}}</p>
+              <p><strong>Total:</strong> {{pedido.total | currency:'COP':'symbol':'1.0-0'}}</p>
+              <p *ngIf="pedido.observaciones"><strong>Observaciones:</strong> {{pedido.observaciones}}</p>
             </div>
           </div>
           <div class="pedido-actions">
-            <button class="action-btn ready">Listo para Entregar</button>
-          </div>
-        </div>
+            <ng-container [ngSwitch]="pedido.estado">
+              <ng-container *ngSwitchCase="'PENDIENTE'">
+                <button class="action-btn accept" (click)="changeStatus(pedido, 'EN_PREPARACION')">Aceptar</button>
+                <button class="action-btn cancel" (click)="changeStatus(pedido, 'CANCELADO')">Cancelar</button>
+              </ng-container>
 
-        <div class="pedido-card listo">
-          <div class="pedido-header">
-            <span class="pedido-id">Pedido #1003</span>
-            <span class="pedido-status">Listo</span>
-          </div>
-          <div class="pedido-content">
-            <h4>Detalle del Pedido</h4>
-            <ul class="pedido-items">
-              <li>1 x Carpaccio de Res</li>
-              <li>1 x Salmón Grillado</li>
-            </ul>
-            <div class="pedido-info">
-              <p><strong>Mesa:</strong> 7</p>
-              <p><strong>Cliente:</strong> Carlos Ruiz</p>
-              <p><strong>Hora:</strong> 15:00</p>
-            </div>
-          </div>
-          <div class="pedido-actions">
-            <button class="action-btn deliver">Marcar como Entregado</button>
+              <ng-container *ngSwitchCase="'EN_PREPARACION'">
+                <button class="action-btn ready" (click)="changeStatus(pedido, 'LISTO')">Listo para Entregar</button>
+                <button class="action-btn cancel" (click)="changeStatus(pedido, 'CANCELADO')">Cancelar</button>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'LISTO'">
+                <button class="action-btn deliver" (click)="changeStatus(pedido, 'ENTREGADO')">Marcar como Entregado</button>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'ENTREGADO'">
+                <p class="status-message delivered">Este pedido ha sido entregado</p>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'CANCELADO'">
+                <p class="status-message cancelled">Este pedido ha sido cancelado</p>
+              </ng-container>
+            </ng-container>
           </div>
         </div>
       </div>
@@ -159,6 +143,11 @@ import { CommonModule } from '@angular/common';
       opacity: 0.7;
     }
 
+    .pedido-card.cancelado {
+      border-left: 4px solid #f44336;
+      opacity: 0.7;
+    }
+
     .pedido-header {
       display: flex;
       justify-content: space-between;
@@ -198,6 +187,11 @@ import { CommonModule } from '@angular/common';
     .pedido-card.entregado .pedido-status {
       background: #9e9e9e;
       color: #000;
+    }
+
+    .pedido-card.cancelado .pedido-status {
+      background: #f44336;
+      color: #fff;
     }
 
     .pedido-content {
@@ -268,6 +262,33 @@ import { CommonModule } from '@angular/common';
       transform: translateY(-2px);
     }
 
+    .no-pedidos {
+      text-align: center;
+      padding: 20px;
+      background: #222;
+      border-radius: 8px;
+      border: 2px solid #ffcc29;
+      color: #888;
+      grid-column: 1 / -1;
+    }
+
+    .status-message {
+      text-align: center;
+      padding: 8px;
+      border-radius: 4px;
+      width: 100%;
+    }
+
+    .status-message.delivered {
+      background: rgba(158, 158, 158, 0.2);
+      color: #9e9e9e;
+    }
+
+    .status-message.cancelled {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+
     @media (max-width: 768px) {
       .pedidos-grid {
         grid-template-columns: 1fr;
@@ -275,4 +296,79 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class GestionPedidosComponent {}
+export class GestionPedidosComponent implements OnInit {
+  allPedidos: Pedido[] = [];
+  filteredPedidos: Pedido[] = [];
+  selectedFilter: string = 'all';
+
+  constructor(private pedidoService: PedidoService) {}
+
+  ngOnInit() {
+    this.loadPedidos();
+  }
+
+  loadPedidos() {
+    this.pedidoService.getAllPedidos().subscribe({
+      next: (pedidos) => {
+        this.allPedidos = pedidos;
+        this.applyFilter(this.selectedFilter);
+      },
+      error: (err) => {
+        console.error('Error al cargar los pedidos', err);
+      }
+    });
+  }
+
+  filterPedidos(filter: string) {
+    this.selectedFilter = filter;
+    this.applyFilter(filter);
+  }
+
+  applyFilter(filter: string) {
+    if (filter === 'all') {
+      this.filteredPedidos = [...this.allPedidos];
+    } else {
+      this.filteredPedidos = this.allPedidos.filter(
+        pedido => pedido.estado === filter
+      );
+    }
+
+    // Ordenar los pedidos por fecha, con los más recientes primero
+    this.filteredPedidos.sort((a, b) => {
+      const dateA = a.fechaCreacion ? new Date(a.fechaCreacion).getTime() : 0;
+      const dateB = b.fechaCreacion ? new Date(b.fechaCreacion).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
+  changeStatus(pedido: Pedido, nuevoEstado: string) {
+    const estadoPedido = nuevoEstado as EstadoPedido;
+
+    this.pedidoService.actualizarEstadoPedido(pedido.id!, estadoPedido).subscribe({
+      next: (pedidoActualizado) => {
+        // Actualizar el pedido en las listas
+        const index = this.allPedidos.findIndex(p => p.id === pedido.id);
+        if (index !== -1) {
+          this.allPedidos[index] = pedidoActualizado;
+        }
+
+        // Volver a aplicar el filtro para actualizar la vista
+        this.applyFilter(this.selectedFilter);
+      },
+      error: (err) => {
+        console.error('Error al actualizar el estado del pedido', err);
+      }
+    });
+  }
+
+  getEstadoLabel(estado: EstadoPedido): string {
+    const labels = {
+      [EstadoPedido.PENDIENTE]: 'Pendiente',
+      [EstadoPedido.EN_PREPARACION]: 'En Preparación',
+      [EstadoPedido.LISTO]: 'Listo para Entregar',
+      [EstadoPedido.ENTREGADO]: 'Entregado',
+      [EstadoPedido.CANCELADO]: 'Cancelado'
+    };
+    return labels[estado] || 'Desconocido';
+  }
+}
