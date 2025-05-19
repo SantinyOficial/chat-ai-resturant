@@ -1,0 +1,53 @@
+<div class="sidebar-header">
+  <div class="logo-container" [class.collapsed]="sidebarCollapsed">
+    <img src="assets/img/logo-peter.jpeg" alt="Logo" class="sidebar-logo">
+    <span *ngIf="!sidebarCollapsed">Banquetes Peter</span>
+  </div>
+  <button class="toggle-btn" (click)="toggleSidebar()">
+    <i class="material-icons">{{ sidebarCollapsed ? 'menu' : 'close' }}</i>
+  </button>
+</div>
+
+<ul class="sidebar-menu" [class.collapsed]="sidebarCollapsed">  <li>
+    <span class="sidebar-section" (click)="toggleClientes()">
+      <i class="material-icons" [class.centered]="sidebarCollapsed">people</i>
+      <span class="menu-text" [class.hidden]="sidebarCollapsed">Clientes</span>
+      <span class="arrow" [class.hidden]="sidebarCollapsed">{{ clientesOpen ? '▼' : '►' }}</span>
+    </span>
+    <ul class="submenu" *ngIf="clientesOpen && !sidebarCollapsed">
+      <li><a routerLink="/chat-asistente" routerLinkActive="active">
+        <i class="material-icons">chat</i>
+        <span>Chat Asistente</span>
+      </a></li>
+      <li><a routerLink="/pedidos" routerLinkActive="active">
+        <i class="material-icons">restaurant</i>
+        <span>Pedidos</span>
+      </a></li>
+    </ul>
+  </li>  <li>
+    <span class="sidebar-section" (click)="toggleMeseros()">
+      <i class="material-icons" [class.centered]="sidebarCollapsed">room_service</i>
+      <span class="menu-text" [class.hidden]="sidebarCollapsed">Meseros</span>
+      <span class="arrow" [class.hidden]="sidebarCollapsed">{{ meserosOpen ? '▼' : '►' }}</span>
+    </span>
+    <ul class="submenu" *ngIf="meserosOpen && !sidebarCollapsed">
+      <li><a routerLink="/menu" routerLinkActive="active">
+        <i class="material-icons">restaurant_menu</i>
+        <span>Menú</span>
+      </a></li>
+      <li><a routerLink="/gestion-pedidos" routerLinkActive="active">
+        <i class="material-icons">assignment</i>
+        <span>Gestión Pedidos</span>
+      </a></li>
+    </ul>
+  </li>
+</ul>
+
+<div class="logo-footer" *ngIf="!sidebarCollapsed">
+  <img src="assets/img/logo-peter.jpeg" alt="Logo" class="footer-logo">
+  <span>© Banquetes Peter 2025</span>
+</div>
+
+<div class="mobile-indicator" *ngIf="sidebarCollapsed">
+  <span>Menú</span>
+</div>
