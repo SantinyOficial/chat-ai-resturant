@@ -437,9 +437,15 @@ export class RealizarPedidoComponent {
   ) {
     this.currentPedido = this.initPedido();
   }
-
   ngOnInit() {
     this.loadMenuItems();
+
+    // Asegurarse de que se está usando el mismo ID de cliente
+    if (!this.clienteId) {
+      this.clienteId = localStorage.getItem('clienteId') ||
+                        ('cliente-' + Math.floor(Math.random() * 1000));
+    }
+
     this.currentPedido.clienteId = this.clienteId;
   }
 

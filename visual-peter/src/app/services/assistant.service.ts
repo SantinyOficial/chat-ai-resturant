@@ -17,6 +17,12 @@ export interface PedidoInfo {
   pedidoCount?: number;
   lastPedidoId?: string;
   lastPedidoStatus?: string;
+  pedidoItems?: string;
+  mesa?: string;
+  total?: string;
+  fechaCreacion?: string;
+  pedidosActivos?: number;  // Número de pedidos activos
+  pedidosEstados?: string;  // Lista de estados de todos los pedidos activos
 }
 
 export interface ChatMessage {
@@ -36,13 +42,20 @@ export interface ChatResponse {
 @Injectable({ providedIn: 'root' })
 export class AssistantService {
   private apiUrl = `${environment.apiUrl}/api/assistant`;
-  private clienteId: string = 'cliente-' + Math.floor(Math.random() * 1000);
+  // Usar el ID del cliente almacenado en localStorage o generar uno nuevo y guardarlo
+  private clienteId: string = localStorage.getItem('clienteId') ||
+                              ('cliente-' + Math.floor(Math.random() * 1000));
   private conversationTimeouts: Map<string, any> = new Map();
 
   constructor(
     private http: HttpClient,
     private pedidoService: PedidoService
-  ) {}
+  ) {
+    // Guardar el ID del cliente en localStorage si no existe
+    if (!localStorage.getItem('clienteId')) {
+      localStorage.setItem('clienteId', this.clienteId);
+    }
+  }
 
   sendMessage(request: ChatRequest): Observable<ChatResponse> {
     // Enriquecer la solicitud con información de pedidos
@@ -68,10 +81,11 @@ export class AssistantService {
         return this.http.post<ChatResponse>(`${this.apiUrl}/chat`, request);
       })
     );
-  }
+  }  private enrichRequestWithPedidoInfo(request: ChatRequest): Observable<ChatRequest> {
+    // Usar el ID del cliente que viene en la solicitud o el almacenado en el servicio
+    const clientId = request.userId || this.clienteId;
 
-  private enrichRequestWithPedidoInfo(request: ChatRequest): Observable<ChatRequest> {
-    return this.pedidoService.getPedidosByCliente(this.clienteId).pipe(
+    return this.pedidoService.getPedidosByCliente(clientId).pipe(
       map(pedidos => {
         const hasPedidos = pedidos && pedidos.length > 0;
         const pedidoInfo: PedidoInfo = {
@@ -80,19 +94,48 @@ export class AssistantService {
         };
 
         if (hasPedidos) {
+          // Filtrar pedidos activos (no entregados ni cancelados)
+          const pedidosActivos = pedidos.filter(p =>
+            p.estado !== EstadoPedido.ENTREGADO && p.estado !== EstadoPedido.CANCELADO
+          );
+
+          pedidoInfo.pedidosActivos = pedidosActivos.length;
+          pedidoInfo.pedidosEstados = pedidosActivos.map(p =>
+            `Pedido #${p.id?.substring(0, 8) || 'Nuevo'}: ${p.estado}`
+          ).join(', ');
+
           // Obtener información del último pedido
           const lastPedido = this.getLastActivePedido(pedidos);
           if (lastPedido) {
             pedidoInfo.lastPedidoId = lastPedido.id;
             pedidoInfo.lastPedidoStatus = lastPedido.estado;
+
+            // Agregar más información detallada del pedido
+            const pedidoItems = lastPedido.items.map(item =>
+              `${item.cantidad}x ${item.nombre}`
+            ).join(', ');
+
+            // Añadir esta información a la solicitud
+            request.pedidoInfo = {
+              ...pedidoInfo,
+              pedidoItems: pedidoItems,
+              mesa: lastPedido.mesa.toString(),
+              total: lastPedido.total.toString(),
+              fechaCreacion: lastPedido.fechaCreacion || 'desconocida'
+            };
+          } else {
+            request.pedidoInfo = pedidoInfo;
           }
+        } else {
+          request.pedidoInfo = pedidoInfo;
         }
 
-        return {
-          ...request,
-          userId: this.clienteId,
-          pedidoInfo
-        };
+        // Asegurarse de incluir el ID del cliente
+        if (!request.userId) {
+          request.userId = clientId;
+        }
+
+        return request;
       }),
       catchError(error => {
         console.error('Error al obtener información de pedidos', error);

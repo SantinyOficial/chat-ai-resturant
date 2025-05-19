@@ -136,8 +136,7 @@ public class AssistantService {
         systemInstructions.append("\n\nEsta es la información actual de nuestros menús:\n").append(menuInfo);
         
         // Añadir información de pedidos si está disponible
-        if (pedidoInfo != null) {
-            systemInstructions.append("\n\nInformación sobre los pedidos del cliente:\n");
+        if (pedidoInfo != null) {            systemInstructions.append("\n\nInformación sobre los pedidos del cliente:\n");
             if (pedidoInfo.isHasPedidos()) {
                 systemInstructions.append("- El cliente tiene ").append(pedidoInfo.getPedidoCount()).append(" pedido(s).\n");
                 
@@ -148,6 +147,23 @@ public class AssistantService {
                     if (pedidoInfo.getLastPedidoStatus() != null) {
                         String readableStatus = getReadableStatus(pedidoInfo.getLastPedidoStatus());
                         systemInstructions.append("está actualmente en estado: ").append(readableStatus).append(".\n");
+                        
+                        // Agregar más detalles del pedido si están disponibles
+                        if (pedidoInfo.getPedidoItems() != null) {
+                            systemInstructions.append("- Detalle del pedido: ").append(pedidoInfo.getPedidoItems()).append("\n");
+                        }
+                        
+                        if (pedidoInfo.getMesa() != null) {
+                            systemInstructions.append("- Mesa: ").append(pedidoInfo.getMesa()).append("\n");
+                        }
+                        
+                        if (pedidoInfo.getTotal() != null) {
+                            systemInstructions.append("- Total: $").append(pedidoInfo.getTotal()).append("\n");
+                        }
+                        
+                        if (pedidoInfo.getFechaCreacion() != null) {
+                            systemInstructions.append("- Fecha de creación: ").append(pedidoInfo.getFechaCreacion()).append("\n");
+                        }
                         
                         // Añadir estimaciones de tiempo según el estado
                         switch (pedidoInfo.getLastPedidoStatus()) {

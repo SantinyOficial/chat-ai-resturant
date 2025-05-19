@@ -1,27 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.service';
 
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="container">
-      <h2>Mis Pedidos</h2>
-
-      <div class="filtros">
+  imports: [CommonModule, RouterModule],
+  template: `    <div class="container">
+      <h2><i class="material-icons">receipt_long</i> Mis Pedidos</h2><div class="filtros">
         <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterPedidos('all')">Todos</button>
         <button class="filter-btn" [class.active]="selectedFilter === 'activos'" (click)="filterPedidos('activos')">Activos</button>
         <button class="filter-btn" [class.active]="selectedFilter === 'completados'" (click)="filterPedidos('completados')">Completados</button>
+        <button class="refresh-btn" (click)="loadUserPedidos()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
       </div>
 
-      <div class="no-pedidos" *ngIf="misPedidos.length === 0">
+      <div class="last-update" *ngIf="lastUpdate">
+        <small>Última actualización: {{lastUpdate | date:'dd/MM/yyyy HH:mm:ss'}}</small>
+      </div><div class="no-pedidos" *ngIf="misPedidos.length === 0">
         <p>No tienes pedidos realizados. Puedes hacer tu pedido hablando con nuestro asistente.</p>
         <button class="go-to-chat" routerLink="/chat-asistente">Ir al Asistente</button>
       </div>
 
-      <div class="pedidos-grid" *ngIf="misPedidos.length > 0">
+      <div class="loading-indicator" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Cargando pedidos...</p>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="misPedidos.length > 0 && !isLoading">
         <div class="pedido-card" *ngFor="let pedido of misPedidos" [ngClass]="pedido.estado.toLowerCase()">
           <div class="pedido-header">
             <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8) || 'Nuevo'}}</span>
@@ -73,9 +81,18 @@ import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.servi
       padding: 0;
       max-width: 1000px;
       margin: 0 auto;
+    }    h2 {
+      color: #ffcc29;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    h2, h4 {
+    h2 .material-icons {
+      font-size: 1.8rem;
+    }
+
+    h4 {
       color: #ffcc29;
     }
 
@@ -93,11 +110,38 @@ import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.servi
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.3s ease;
+    }    .filter-btn:hover {
+      background: #ffdd54;
+      box-shadow: 0 0 8px #ffcc29;
     }
 
-    .filter-btn.active, .filter-btn:hover {
-      background: #ffcc29;
-      color: #181818;
+    .refresh-btn {
+      padding: 8px 16px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+    }
+
+    .refresh-btn:hover {
+      background: #555;
+      transform: translateY(-2px);
+    }
+
+    .refresh-btn .material-icons {
+      font-size: 18px;    }
+
+    .last-update {
+      text-align: right;
+      color: #777;
+      margin-top: 5px;
+      font-size: 0.8rem;
     }
 
     .no-pedidos {
@@ -298,7 +342,32 @@ import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.servi
       padding: 15px;
       text-align: center;
       color: #f44336;
-      border-top: 1px solid #333;
+      border-top: 1px solid #333;    }
+
+    .loading-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      background: #222;
+      border-radius: 8px;
+      margin-top: 20px;
+      color: #ddd;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 204, 41, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffcc29;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     @media (max-width: 768px) {
@@ -308,56 +377,85 @@ import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.servi
     }
   `]
 })
-export class PedidosComponent implements OnInit {
+export class PedidosComponent implements OnInit, OnDestroy {
   misPedidos: Pedido[] = [];
   selectedFilter: string = 'all';
-  // ID temporal del cliente (en producción se usaría autenticación real)
-  clienteId: string = 'cliente-' + Math.floor(Math.random() * 1000);
+  pedidosInterval: any;
+  isLoading: boolean = false;
+  lastUpdate: Date | null = null;
+  // Usar el mismo clienteId que se usa en el asistente
+  clienteId: string = localStorage.getItem('clienteId') ||
+                      ('cliente-' + Math.floor(Math.random() * 1000));
 
-  constructor(private pedidoService: PedidoService) {}
+  constructor(private pedidoService: PedidoService) {
+    // Guardar el ID del cliente en localStorage si no existe
+    if (!localStorage.getItem('clienteId')) {
+      localStorage.setItem('clienteId', this.clienteId);
+    }
+  }
 
   ngOnInit() {
     this.loadUserPedidos();
+
+    // Actualizar pedidos cada 30 segundos
+    this.pedidosInterval = setInterval(() => {
+      this.loadUserPedidos();
+    }, 30000);
   }
 
-  loadUserPedidos() {
+  ngOnDestroy() {
+    // Limpiar el intervalo cuando el componente se destruye
+    if (this.pedidosInterval) {
+      clearInterval(this.pedidosInterval);
+    }
+  }  loadUserPedidos() {
+    this.isLoading = true;
     this.pedidoService.getPedidosByCliente(this.clienteId).subscribe({
       next: (pedidos) => {
+        // Guardar todos los pedidos sin filtrar
         this.misPedidos = pedidos;
+
+        // Actualizar la vista aplicando el filtro actual
         this.filterPedidos(this.selectedFilter);
+
+        console.log(`Se cargaron ${pedidos.length} pedidos para el cliente ${this.clienteId}`);
+
+        // Guardar nuevamente el clienteId para mantener consistencia
+        localStorage.setItem('clienteId', this.clienteId);
+        this.isLoading = false;
+        this.lastUpdate = new Date();
       },
       error: (err) => {
         console.error('Error al cargar los pedidos del usuario', err);
+        this.isLoading = false;
       }
     });
   }
-
   filterPedidos(filter: string) {
     this.selectedFilter = filter;
 
-    this.pedidoService.getPedidosByCliente(this.clienteId).subscribe({
-      next: (pedidos) => {
-        if (filter === 'all') {
-          this.misPedidos = pedidos;
-        } else if (filter === 'activos') {
-          this.misPedidos = pedidos.filter(p =>
-            p.estado !== EstadoPedido.ENTREGADO &&
-            p.estado !== EstadoPedido.CANCELADO
-          );
-        } else if (filter === 'completados') {
-          this.misPedidos = pedidos.filter(p =>
-            p.estado === EstadoPedido.ENTREGADO ||
-            p.estado === EstadoPedido.CANCELADO
-          );
-        }
+    // Usamos los pedidos ya cargados en memoria en lugar de hacer una nueva solicitud
+    const pedidosOriginales = [...this.misPedidos];
 
-        // Ordenar por fecha (más recientes primero)
-        this.misPedidos.sort((a, b) => {
-          const dateA = a.fechaCreacion ? new Date(a.fechaCreacion) : new Date();
-          const dateB = b.fechaCreacion ? new Date(b.fechaCreacion) : new Date();
-          return dateB.getTime() - dateA.getTime();
-        });
-      }
+    if (filter === 'all') {
+      // No filtramos, mostramos todos
+    } else if (filter === 'activos') {
+      this.misPedidos = pedidosOriginales.filter(p =>
+        p.estado !== EstadoPedido.ENTREGADO &&
+        p.estado !== EstadoPedido.CANCELADO
+      );
+    } else if (filter === 'completados') {
+      this.misPedidos = pedidosOriginales.filter(p =>
+        p.estado === EstadoPedido.ENTREGADO ||
+        p.estado === EstadoPedido.CANCELADO
+      );
+    }
+
+    // Ordenar por fecha (más recientes primero)
+    this.misPedidos.sort((a, b) => {
+      const dateA = a.fechaCreacion ? new Date(a.fechaCreacion) : new Date();
+      const dateB = b.fechaCreacion ? new Date(b.fechaCreacion) : new Date();
+      return dateB.getTime() - dateA.getTime();
     });
   }
 
