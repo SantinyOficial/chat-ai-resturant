@@ -35,3 +35,4 @@ build/
 
 ### Arcihvos a ignorar ###
 src/main/resources/application.yml
+
