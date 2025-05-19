@@ -19,7 +19,7 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/assistant")
-@CrossOrigin(origins = "*") // Permitir solicitudes desde cualquier origen
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true") // Permitir solicitudes solo desde el frontend Angular en desarrollo
 public class AssistantController {
 
     private final AssistantService assistantService;

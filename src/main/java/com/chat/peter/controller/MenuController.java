@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/menus")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true") // Permitir solicitudes solo desde el frontend Angular en desarrollo
 public class MenuController {
 
     private final MenuService menuService;
