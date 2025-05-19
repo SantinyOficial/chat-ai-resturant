@@ -1,10 +1,11 @@
-import { Component, ViewChild, ElementRef, OnInit, AfterViewChecked } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssistantService, ChatRequest, ChatResponse, ChatMessage } from '../../services/assistant.service';
 import { RealizarPedidoComponent } from '../realizar-pedido/realizar-pedido.component';
-import { Pedido } from '../../services/pedido.service';
+import { Pedido, PedidoService } from '../../services/pedido.service';
 import { environment } from '../../../environments/environment';
+import { Subscription } from 'rxjs';
 
 // Interfaz local para mensajes en el chat (para uso en UI)
 interface UIChatMessage {
@@ -59,12 +60,22 @@ interface UIChatMessage {
           <div *ngIf="error" class="error-message">
             {{ error }}
           </div>
-        </div>
-
-        <div class="chat-actions">
+        </div>        <div class="chat-actions">
           <button class="action-button" (click)="abrirRealizarPedido()">
             <i class="material-icons">restaurant_menu</i>
             Realizar Pedido
+          </button>
+          <button class="action-button" (click)="sendQuickQuestion('¿Cuál es el menú del día?')">
+            <i class="material-icons">menu_book</i>
+            Ver Menú
+          </button>
+          <button class="action-button" (click)="sendQuickQuestion('¿Cuál es el estado de mi pedido?')">
+            <i class="material-icons">local_shipping</i>
+            Estado de Pedido
+          </button>
+          <button class="action-button" (click)="sendQuickQuestion('¿Cuáles son los horarios del restaurante?')">
+            <i class="material-icons">access_time</i>
+            Horarios
           </button>
         </div>
 
@@ -324,36 +335,39 @@ interface UIChatMessage {
     }    @keyframes bounce {
       0%, 60%, 100% { transform: translateY(0); }
       30% { transform: translateY(-6px); }
-    }
-
-    .chat-actions {
-      padding: 0 20px 10px;
+    }    .chat-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
+      padding: 15px 20px;
+      border-top: 1px solid rgba(255,204,41,0.3);
+      background: rgba(0,0,0,0.2);
     }
 
     .action-button {
-      width: auto;
-      height: auto;
-      padding: 8px 16px;
-      border-radius: 20px;
-      background: #333;
+      flex: 1;
+      min-width: calc(50% - 10px);
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
       color: #fff;
+      border: 1px solid rgba(255,204,41,0.3);
+      border-radius: 8px;
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.9rem;
-      font-weight: 500;
+      justify-content: flex-start;
+      gap: 10px;
+      cursor: pointer;
       transition: all 0.3s ease;
     }
 
     .action-button:hover {
-      background: var(--primary-color);
-      color: var(--background-dark);
+      background: rgba(255,204,41,0.15);
+      border-color: var(--primary-color);
+      transform: translateY(-2px);
     }
 
     .action-button .material-icons {
-      font-size: 1.1rem;
+      color: var(--primary-color);
     }
 
     @media (max-width: 768px) {
@@ -375,22 +389,25 @@ interface UIChatMessage {
     }
   `]
 })
-export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
+export class ChatAsistenteComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
-
-  userMessage: string = '';
   messages: UIChatMessage[] = [];
+  userMessage: string = '';
   loading: boolean = false;
   error: string = '';
   currentConversationId: string | null = null;
-
-  // Modal para realizar pedido
   mostrarRealizarPedido: boolean = false;
-
   // ID del cliente (debería ser dinámico basado en el usuario autenticado)
   clienteId: string = localStorage.getItem('clienteId') || 'cliente-' + Math.floor(Math.random() * 1000);
 
-  constructor(private assistantService: AssistantService) {}
+  // Para actualización periódica de pedidos
+  private pedidosInterval: any;
+  private pedidosSubscription: Subscription | null = null;
+
+  constructor(
+    private assistantService: AssistantService,
+    private pedidoService: PedidoService
+  ) {}
 
   ngOnInit(): void {
     // Guardar clienteId para su uso posterior
@@ -413,6 +430,53 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
         localStorage.removeItem('lastChatActivity');
       }
     }
+
+    // Configurar una actualización periódica de información de pedidos
+    this.pedidosInterval = setInterval(() => {
+      this.refreshPedidosContext();
+    }, 30000); // Cada 30 segundos
+  }
+
+  ngOnDestroy() {
+    // Limpiar el intervalo cuando el componente se destruye
+    if (this.pedidosInterval) {
+      clearInterval(this.pedidosInterval);
+    }
+
+    // Cancelar suscripciones activas
+    if (this.pedidosSubscription) {
+      this.pedidosSubscription.unsubscribe();
+    }
+  }
+
+  // Método para actualizar el contexto de pedidos en tiempo real
+  refreshPedidosContext() {
+    if (!this.currentConversationId) return; // Solo si hay una conversación activa
+
+    this.pedidosSubscription = this.pedidoService.getPedidosByCliente(this.clienteId).subscribe({
+      next: (pedidos) => {
+        if (pedidos && pedidos.length > 0) {
+          // Solo actualizar si hay pedidos activos pendientes
+          const pedidosActivos = pedidos.filter(p =>
+            p.estado !== 'ENTREGADO' && p.estado !== 'CANCELADO'
+          );
+
+          if (pedidosActivos.length > 0) {            // Enviar mensaje silencioso para actualizar el contexto
+            const updateRequest: ChatRequest = {
+              message: "_actualización_de_contexto_", // Mensaje especial que podría ser ignorado en la UI
+              conversationId: this.currentConversationId || undefined,
+              userId: this.clienteId
+            };
+
+            this.assistantService.sendMessage(updateRequest).subscribe({
+              next: () => console.log('Contexto de pedidos actualizado silenciosamente'),
+              error: (err) => console.error('Error actualizando contexto de pedidos:', err)
+            });
+          }
+        }
+      },
+      error: (err) => console.error('Error consultando pedidos para actualización de contexto:', err)
+    });
   }
 
   /**
@@ -636,5 +700,15 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
         }
       });
     }
+  }
+
+  /**
+   * Enviar una pregunta rápida al asistente
+   */
+  sendQuickQuestion(question: string) {
+    // Establecer la pregunta en el campo de entrada
+    this.userMessage = question;
+    // Enviar el mensaje
+    this.sendMessage();
   }
 }

@@ -43,12 +43,15 @@ public class UserMessageRequest {
     
     /**
      * Clase anidada para almacenar información sobre los pedidos del cliente
-     */
-    public static class PedidoInfo {
+     */    public static class PedidoInfo {
         private boolean hasPedidos;
         private Integer pedidoCount;
         private String lastPedidoId;
         private String lastPedidoStatus;
+        private String pedidoItems;
+        private String mesa;
+        private String total;
+        private String fechaCreacion;
         
         public boolean isHasPedidos() {
             return hasPedidos;
@@ -80,6 +83,38 @@ public class UserMessageRequest {
         
         public void setLastPedidoStatus(String lastPedidoStatus) {
             this.lastPedidoStatus = lastPedidoStatus;
+        }
+        
+        public String getPedidoItems() {
+            return pedidoItems;
+        }
+        
+        public void setPedidoItems(String pedidoItems) {
+            this.pedidoItems = pedidoItems;
+        }
+        
+        public String getMesa() {
+            return mesa;
+        }
+        
+        public void setMesa(String mesa) {
+            this.mesa = mesa;
+        }
+        
+        public String getTotal() {
+            return total;
+        }
+        
+        public void setTotal(String total) {
+            this.total = total;
+        }
+        
+        public String getFechaCreacion() {
+            return fechaCreacion;
+        }
+        
+        public void setFechaCreacion(String fechaCreacion) {
+            this.fechaCreacion = fechaCreacion;
         }
     }
 }
