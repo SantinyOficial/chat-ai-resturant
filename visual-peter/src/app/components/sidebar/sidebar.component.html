@@ -34,10 +34,13 @@
       <span class="arrow" *ngIf="!sidebarCollapsed">{{ meserosOpen ? '▼' : '►' }}</span>
     </div>
     <div class="submenu-wrapper" [class.expanded]="meserosOpen && !sidebarCollapsed" [class.collapsed]="!meserosOpen || sidebarCollapsed">
-      <ul class="submenu">
-        <li><a routerLink="/menu" routerLinkActive="active">
+      <ul class="submenu">        <li><a routerLink="/menu" routerLinkActive="active">
           <i class="material-icons">restaurant_menu</i>
           <span>Menú</span>
+        </a></li>
+        <li><a routerLink="/menu-gestion" routerLinkActive="active">
+          <i class="material-icons">edit</i>
+          <span>Gestión de Menús</span>
         </a></li>
         <li><a routerLink="/gestion-pedidos" routerLinkActive="active">
           <i class="material-icons">assignment</i>

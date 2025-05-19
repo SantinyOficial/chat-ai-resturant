@@ -31,7 +31,7 @@ export class AssistantService {
   sendMessage(request: ChatRequest): Observable<ChatResponse> {
     return this.http.post<ChatResponse>(`${this.apiUrl}/chat`, request);
   }
-  
+
   sendMessageDirect(request: ChatRequest, directUrl: string): Observable<ChatResponse> {
     return this.http.post<ChatResponse>(directUrl, request);
   }

@@ -322,7 +322,7 @@ import { AssistantService, ChatRequest, ChatResponse, ChatMessage } from '../../
 })
 export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
-  
+
   userMessage: string = '';
   messages: {sender: string, text: string, time: string}[] = [];
   loading: boolean = false;
@@ -405,7 +405,7 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
       },
       error: (err) => {
         console.error('Error al enviar mensaje:', err);
-        
+
         // Intentar conexión directa con el backend
         this.tryDirectConnection(request);
       }
@@ -414,19 +414,19 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
 
   private tryDirectConnection(request: ChatRequest): void {
     console.log('Intentando conexión directa con el backend');
-    
+
     const directUrl = 'http://localhost:8080/api/assistant/chat';
     this.assistantService.sendMessageDirect(request, directUrl).subscribe({
       next: (response: ChatResponse) => {
         console.log('Conexión directa exitosa:', response);
         this.currentConversationId = response.conversationId;
-        
+
         this.messages.push({
           sender: 'bot',
           text: response.message.content,
           time: this.formatTime()
         });
-        
+
         this.loading = false;
       },
       error: (directErr) => {
@@ -435,10 +435,10 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
       }
     });
   }
-  
+
   private handleError(err: any): void {
     let errorMsg = 'Lo siento, ha ocurrido un error al procesar tu solicitud. Por favor, intenta nuevamente.';
-    
+
     if (err.status === 0) {
       errorMsg = 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución.';
       this.error = 'Error de conexión: No se pudo establecer comunicación con el servidor';
@@ -451,13 +451,13 @@ export class ChatAsistenteComponent implements OnInit, AfterViewChecked {
     } else {
       this.error = `Error ${err.status}: ${err.statusText || 'Error desconocido'}`;
     }
-    
+
     this.messages.push({
       sender: 'bot',
       text: errorMsg,
       time: this.formatTime()
     });
-    
+
     this.loading = false;
   }
 }
