@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/api' // Se espera que en producción la API esté en el mismo dominio
+  apiUrl: 'https://banquetes-peter-api.herokuapp.com' // URL del backend desplegado
 };
