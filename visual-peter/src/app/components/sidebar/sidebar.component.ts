@@ -12,6 +12,7 @@ import { RouterModule, RouterLinkActive } from '@angular/router';
 export class SidebarComponent {
   clientesOpen = true;
   meserosOpen = false;
+  cocinaOpen = false;
   sidebarCollapsed = false;
 
   @Output() collapsedChange = new EventEmitter<boolean>();
@@ -28,12 +29,19 @@ export class SidebarComponent {
     }
   }
 
+  toggleCocina() {
+    if (!this.sidebarCollapsed) {
+      this.cocinaOpen = !this.cocinaOpen;
+    }
+  }
+
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
     // Cerrar los submenús al colapsar para evitar problemas con las animaciones
     if (this.sidebarCollapsed) {
       this.clientesOpen = false;
       this.meserosOpen = false;
+      this.cocinaOpen = false;
     }
     this.collapsedChange.emit(this.sidebarCollapsed);
   }

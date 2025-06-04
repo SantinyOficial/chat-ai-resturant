@@ -1,0 +1,104 @@
+<div class="realizar-pedido-container">
+  <div class="pedido-header">
+    <h3>Realizar Pedido</h3>
+    <button class="close-btn" (click)="cerrar()">&times;</button>
+  </div>
+
+  <div class="pedido-content">
+    <div class="menu-section">
+      <div class="menu-filter">
+        <button class="filter-btn" [class.active]="selectedCategory === 'all'" (click)="filterCategory('all')">Todos</button>
+        <button class="filter-btn" [class.active]="selectedCategory === 'entrada'" (click)="filterCategory('entrada')">Entradas</button>
+        <button class="filter-btn" [class.active]="selectedCategory === 'principal'" (click)="filterCategory('principal')">Platos Principales</button>
+        <button class="filter-btn" [class.active]="selectedCategory === 'postre'" (click)="filterCategory('postre')">Postres</button>
+        <button class="filter-btn" [class.active]="selectedCategory === 'bebida'" (click)="filterCategory('bebida')">Bebidas</button>
+      </div>
+
+      <div class="menu-items-container">
+        <div class="menu-category" *ngIf="showCategory('entrada')">
+          <h4>Entradas</h4>
+          <div class="menu-item" *ngFor="let item of getItemsByCategory('entrada')">
+            <span class="item-name">{{item.nombre}}</span>
+            <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+            <button class="add-button" (click)="addToOrder(item)">Añadir</button>
+          </div>
+        </div>
+
+        <div class="menu-category" *ngIf="showCategory('principal')">
+          <h4>Platos Principales</h4>
+          <div class="menu-item" *ngFor="let item of getItemsByCategory('principal')">
+            <span class="item-name">{{item.nombre}}</span>
+            <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+            <button class="add-button" (click)="addToOrder(item)">Añadir</button>
+          </div>
+        </div>
+
+        <div class="menu-category" *ngIf="showCategory('postre')">
+          <h4>Postres</h4>
+          <div class="menu-item" *ngFor="let item of getItemsByCategory('postre')">
+            <span class="item-name">{{item.nombre}}</span>
+            <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+            <button class="add-button" (click)="addToOrder(item)">Añadir</button>
+          </div>
+        </div>
+
+        <div class="menu-category" *ngIf="showCategory('bebida')">
+          <h4>Bebidas</h4>
+          <div class="menu-item" *ngFor="let item of getItemsByCategory('bebida')">
+            <span class="item-name">{{item.nombre}}</span>
+            <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+            <button class="add-button" (click)="addToOrder(item)">Añadir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pedido-resumen">
+      <h4>Tu Pedido</h4>
+      <div class="cliente-info">
+        <div class="form-group">
+          <label for="clienteNombre">Nombre:</label>
+          <input type="text" id="clienteNombre" [(ngModel)]="currentPedido.clienteNombre" placeholder="Su nombre">
+        </div>
+        <div class="form-group">
+          <label for="mesa">Mesa:</label>
+          <input type="number" id="mesa" [(ngModel)]="currentPedido.mesa" placeholder="Número de mesa">
+        </div>
+      </div>
+
+      <div class="pedido-items">
+        <ng-container *ngIf="currentPedido.items.length === 0">
+          <p class="no-items">No has añadido items a tu pedido.</p>
+        </ng-container>
+        <div class="order-item" *ngFor="let item of currentPedido.items; let i = index">
+          <div class="item-details">
+            <span class="item-quantity">
+              <button class="quantity-btn" (click)="decreaseQuantity(i)">-</button>
+              {{item.cantidad}}
+              <button class="quantity-btn" (click)="increaseQuantity(i)">+</button>
+            </span>
+            <span class="item-name">{{item.nombre}}</span>
+            <span class="item-price">{{item.precio * item.cantidad | currency:'COP':'symbol':'1.0-0'}}</span>
+          </div>
+          <button class="remove-btn" (click)="removeItem(i)">✕</button>
+        </div>
+      </div>
+
+      <div class="form-group observaciones">
+        <label for="observaciones">Observaciones:</label>
+        <textarea id="observaciones" [(ngModel)]="currentPedido.observaciones" placeholder="Especificaciones adicionales del pedido"></textarea>
+      </div>
+
+      <div class="pedido-total">
+        <span>Total:</span>
+        <span class="total-price">{{currentPedido.total | currency:'COP':'symbol':'1.0-0'}}</span>
+      </div>
+
+      <button class="confirm-button" [disabled]="!canConfirmOrder()" (click)="confirmOrder()">Confirmar Pedido</button>
+
+      <div class="order-status" *ngIf="orderStatus">
+        <div class="status-message {{orderStatus.toLowerCase()}}">{{orderStatusMessage}}</div>
+      </div>
+    </div>
+  </div>
+</div>

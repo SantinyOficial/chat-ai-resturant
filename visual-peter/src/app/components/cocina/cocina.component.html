@@ -1,0 +1,383 @@
+<div class="container">  <div class="header-section">
+    <h2><i class="material-icons">restaurant</i> Gestión de Cocina</h2>    <!-- Sistema Viernes - Escucha Continua Estilo Alexa -->
+    <div class="viernes-controls">
+      <div [class]="viernesClasesCSS">
+        <div class="viernes-indicator">
+          <i class="material-icons">{{ viernesActivo ? 'mic' : 'mic_off' }}</i>
+          <!-- Efectos visuales dinámicos -->
+          <div class="pulse-ring" *ngIf="estadoVozViernes === 'listening'"></div>
+          <div class="siri-waves" *ngIf="estadoVozViernes === 'processing'">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+          </div>
+          <div class="chatgpt-audio" *ngIf="estadoVozViernes === 'speaking'">
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+          </div>
+        </div>
+        <div class="viernes-info">
+          <h3>🤖 Viernes AI</h3>
+          <p class="status">{{ estadoViernes }}</p>
+          <p class="instructions" *ngIf="viernesActivo && estadoVozViernes === 'listening'">
+            Di: <strong>"Viernes"</strong> + tu comando
+          </p>
+        </div>
+      </div>
+
+      <div class="ultimo-comando" *ngIf="ultimoComando">
+        <small><i class="material-icons">record_voice_over</i> "{{ ultimoComando }}"</small>
+      </div>
+
+      <div class="respuesta-ia" *ngIf="ultimaRespuestaAI?.respuestaAI">
+        <small><i class="material-icons">smart_toy</i> "{{ ultimaRespuestaAI?.respuestaAI }}"</small>
+      </div>
+    </div>
+  </div>  <!-- Panel de Testing de Comandos con Viernes IA -->
+  <div class="voice-testing" *ngIf="soporteVoz">
+    <details>
+      <summary>🤖 Test de Viernes IA - Comandos Naturales</summary>
+      <div class="test-controls">
+        <input
+          type="text"
+          [(ngModel)]="comandoManual"
+          placeholder='Ej: "Viernes, mesa 5 ya está lista", "Viernes, empezar con la mesa 3"'
+          (keyup.enter)="enviarComandoManual()">
+        <button (click)="enviarComandoManual()" [disabled]="!comandoManual.trim() || procesandoComandoIA">
+          <i class="material-icons">{{ procesandoComandoIA ? 'hourglass_empty' : 'send' }}</i>
+          {{ procesandoComandoIA ? 'Procesando...' : 'Enviar a Viernes' }}
+        </button>
+      </div>
+      <div class="ejemplos-comandos">
+        <p><strong>Comandos naturales que entiende Viernes:</strong></p>
+        <ul>
+          <li>"Viernes, hola" → Conversación general</li>
+          <li>"Viernes, mesa 5 ya está lista" → Marcar pedido como listo</li>
+          <li>"Viernes, voy a empezar con la mesa 3" → Iniciar preparación</li>
+          <li>"Viernes, ¿cómo van los pedidos?" → Consultar estado general</li>
+          <li>"Viernes, necesito pausar mesa 7" → Pausar pedido</li>
+        </ul>
+        <div class="viernes-tip">
+          <i class="material-icons">lightbulb</i>
+          <span><strong>Tip:</strong> Viernes está siempre escuchando. Solo di "Viernes" + tu comando sin presionar botones.</span>
+        </div>
+      </div>
+      <div class="info-ia" *ngIf="ultimaRespuestaAI">
+        <p><strong>Última respuesta de Viernes:</strong> {{ infoUltimaRespuestaAI }}</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Indicador visual de escucha -->
+  <div class="voice-indicator" *ngIf="escuchandoVoz">
+    <div class="pulse-animation"></div>
+    <span><i class="material-icons">mic</i> Escuchando comandos de cocina...</span>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="estadisticas-section" *ngIf="estadisticas">
+    <div class="stat-card">
+      <i class="material-icons">pending</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.pedidosPendientes }}</h3>
+        <p>Pendientes</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">restaurant</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.pedidosEnPreparacion }}</h3>
+        <p>En Preparación</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">check_circle</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.pedidosListos }}</h3>
+        <p>Listos</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">schedule</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.tiempoPromedioPreparacion }}</h3>
+        <p>Min. Promedio</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">trending_up</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.eficienciaCocina }}%</h3>
+        <p>Eficiencia</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pestañas de estado -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'pendientes'" (click)="cambiarTab('pendientes')">
+      <i class="material-icons">hourglass_empty</i>
+      Pendientes ({{ pedidosPendientes.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'preparacion'" (click)="cambiarTab('preparacion')">
+      <i class="material-icons">restaurant</i>
+      En Preparación ({{ pedidosEnPreparacion.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'listos'" (click)="cambiarTab('listos')">
+      <i class="material-icons">check_circle</i>
+      Listos ({{ pedidosListos.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'cocineros'" (click)="cambiarTab('cocineros')">
+      <i class="material-icons">people</i>
+      Cocineros
+    </button>
+  </div>
+
+  <!-- Contenido de pestañas -->
+  <div class="tab-content">
+
+    <!-- Pedidos Pendientes -->
+    <div *ngIf="activeTab === 'pendientes'" class="pedidos-section">
+      <div class="section-header">
+        <h3>Pedidos Pendientes</h3>
+        <button class="refresh-btn" (click)="loadPedidosPendientes()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="!loadingPendientes">
+        <div class="pedido-card pendiente" *ngFor="let pedido of pedidosPendientes"
+             [class.prioridad-alta]="pedido.prioridad === 'ALTA'"
+             [class.prioridad-urgente]="pedido.prioridad === 'URGENTE'">
+
+          <div class="pedido-header">
+            <h4>Pedido #{{ pedido.numeroPedido || pedido.id.substring(0, 8) }}</h4>
+            <div class="prioridad-badge" [class]="'prioridad-' + pedido.prioridad.toLowerCase()">
+              {{ getPrioridadTexto(pedido.prioridad) }}
+            </div>
+          </div>
+
+          <div class="pedido-info">
+            <p><i class="material-icons">person</i> {{ pedido.clienteNombre }}</p>
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ pedido.mesa }}</p>
+            <p><i class="material-icons">access_time</i>
+               {{ pedido.fechaRecibido | date:'HH:mm' }}
+            </p>
+            <p *ngIf="pedido.tiempoEstimadoTotal">
+              <i class="material-icons">schedule</i>
+              Estimado: {{ pedido.tiempoEstimadoTotal }} min
+            </p>
+          </div>
+
+          <div class="pedido-items">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <span class="item-estado" [class]="'estado-' + item.estado.toLowerCase()">
+                {{ getEstadoTexto(item.estado) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="pedido-observaciones" *ngIf="pedido.observaciones">
+            <p><strong>Observaciones:</strong> {{ pedido.observaciones }}</p>
+          </div>
+
+          <div class="pedido-actions">
+            <select class="cocinero-select" [(ngModel)]="pedido.cocineroTemporal"
+                    [disabled]="procesandoPedido === pedido.id">
+              <option value="">Seleccionar cocinero</option>
+              <option *ngFor="let cocinero of cocinerosDisponibles" [value]="cocinero.id">
+                {{ cocinero.nombre }} ({{ cocinero.pedidosAsignados }} pedidos)
+              </option>
+            </select>
+
+            <button class="action-btn iniciar-btn"
+                    [disabled]="procesandoPedido === pedido.id"
+                    (click)="iniciarPreparacion(pedido)">
+              <i class="material-icons">{{ procesandoPedido === pedido.id ? 'hourglass_empty' : 'play_arrow' }}</i>
+              {{ procesandoPedido === pedido.id ? 'Iniciando...' : 'Iniciar' }}
+            </button>
+
+            <button class="action-btn priority-btn" (click)="cambiarPrioridad(pedido)">
+              <i class="material-icons">priority_high</i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingPendientes">
+        <p>Cargando pedidos pendientes...</p>
+      </div>
+
+      <div class="no-pedidos" *ngIf="!loadingPendientes && pedidosPendientes.length === 0">
+        <p>No hay pedidos pendientes en este momento.</p>
+      </div>
+    </div>
+
+    <!-- Pedidos en Preparación -->
+    <div *ngIf="activeTab === 'preparacion'" class="pedidos-section">
+      <div class="section-header">
+        <h3>Pedidos en Preparación</h3>
+        <button class="refresh-btn" (click)="loadPedidosEnPreparacion()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="!loadingPreparacion">
+        <div class="pedido-card preparacion" *ngFor="let pedido of pedidosEnPreparacion">
+
+          <div class="pedido-header">
+            <h4>Pedido #{{ pedido.numeroPedido || pedido.id.substring(0, 8) }}</h4>
+            <div class="tiempo-transcurrido">
+              <i class="material-icons">schedule</i>
+              {{ calcularTiempoTranscurrido(pedido.fechaIniciado) }}
+            </div>
+          </div>
+
+          <div class="pedido-info">
+            <p><i class="material-icons">person</i> {{ pedido.clienteNombre }}</p>
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ pedido.mesa }}</p>
+            <p *ngIf="pedido.cocineroAsignado">
+              <i class="material-icons">chef</i> {{ pedido.cocineroAsignado }}
+            </p>
+          </div>
+
+          <div class="pedido-items">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <div class="item-controls">
+                <select class="item-estado-select"
+                        [(ngModel)]="item.estado"
+                        (change)="actualizarEstadoItem(pedido.id, item.nombre, item.estado)">
+                  <option value="RECIBIDO">Recibido</option>
+                  <option value="EN_PREPARACION">En Preparación</option>
+                  <option value="LISTO">Listo</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="pedido-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="calcularProgreso(pedido)"></div>
+            </div>
+            <span class="progress-text">{{ calcularProgreso(pedido) }}% Completado</span>
+          </div>
+
+          <div class="pedido-actions">
+            <button class="action-btn pause-btn" (click)="pausarPedido(pedido)">
+              <i class="material-icons">pause</i> Pausar
+            </button>
+
+            <button class="action-btn complete-btn"
+                    [disabled]="calcularProgreso(pedido) < 100"
+                    (click)="marcarPedidoListo(pedido)">
+              <i class="material-icons">check</i> Marcar Listo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingPreparacion">
+        <p>Cargando pedidos en preparación...</p>
+      </div>
+    </div>
+
+    <!-- Pedidos Listos -->
+    <div *ngIf="activeTab === 'listos'" class="pedidos-section">
+      <div class="section-header">
+        <h3>Pedidos Listos para Entregar</h3>
+        <button class="refresh-btn" (click)="loadPedidosListos()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="!loadingListos">
+        <div class="pedido-card listo" *ngFor="let pedido of pedidosListos">
+
+          <div class="pedido-header">
+            <h4>Pedido #{{ pedido.numeroPedido || pedido.id.substring(0, 8) }}</h4>
+            <div class="tiempo-espera">
+              <i class="material-icons">access_time</i>
+              Listo hace {{ calcularTiempoTranscurrido(pedido.fechaCompleto) }}
+            </div>
+          </div>
+
+          <div class="pedido-info">
+            <p><i class="material-icons">person</i> {{ pedido.clienteNombre }}</p>
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ pedido.mesa }}</p>
+          </div>
+
+          <div class="pedido-items">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <i class="material-icons item-check">check_circle</i>
+            </div>
+          </div>
+
+          <div class="pedido-actions">
+            <button class="action-btn notify-btn" (click)="notificarPedidoListo(pedido)">
+              <i class="material-icons">notifications</i> Notificar
+            </button>
+
+            <button class="action-btn deliver-btn" (click)="marcarPedidoEntregado(pedido)">
+              <i class="material-icons">done</i> Entregar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingListos">
+        <p>Cargando pedidos listos...</p>
+      </div>
+    </div>
+
+    <!-- Cocineros -->
+    <div *ngIf="activeTab === 'cocineros'" class="cocineros-section">
+      <div class="section-header">
+        <h3>Cocineros Disponibles</h3>
+        <button class="refresh-btn" (click)="loadCocineros()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="cocineros-grid" *ngIf="!loadingCocineros">
+        <div class="cocinero-card" *ngFor="let cocinero of cocinerosDisponibles"
+             [class.no-disponible]="!cocinero.disponible">
+
+          <div class="cocinero-avatar">
+            <i class="material-icons">person</i>
+          </div>
+
+          <div class="cocinero-info">
+            <h4>{{ cocinero.nombre }}</h4>
+            <p *ngIf="cocinero.especialidad">{{ cocinero.especialidad }}</p>
+            <p class="pedidos-asignados">
+              {{ cocinero.pedidosAsignados }} pedidos asignados
+            </p>
+          </div>
+
+          <div class="cocinero-estado">
+            <span class="estado-badge" [class.disponible]="cocinero.disponible"
+                  [class.ocupado]="!cocinero.disponible">
+              {{ cocinero.disponible ? 'Disponible' : 'Ocupado' }}
+            </span>
+          </div>
+
+          <div class="cocinero-actions" *ngIf="cocinero.pedidosAsignados > 0">
+            <button class="action-btn" (click)="verPedidosCocinero(cocinero)">
+              <i class="material-icons">list</i> Ver Pedidos
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingCocineros">
+        <p>Cargando cocineros...</p>
+      </div>
+    </div>
+  </div>
+</div>

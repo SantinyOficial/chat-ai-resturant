@@ -1,0 +1,180 @@
+<div class="container">
+  <h2><i class="material-icons">local_cafe</i> Micropedidos Rápidos</h2>
+  
+  <!-- Pestañas -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'crear'" (click)="activeTab = 'crear'">
+      <i class="material-icons">add</i> Crear Micropedido
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'mis-micropedidos'" (click)="activeTab = 'mis-micropedidos'; loadMisMicropedidos()">
+      <i class="material-icons">list</i> Mis Micropedidos
+    </button>
+  </div>
+
+  <!-- Crear Micropedido -->
+  <div *ngIf="activeTab === 'crear'" class="tab-content">
+    <div class="opciones-section">
+      <h3>Opciones Disponibles</h3>
+      
+      <!-- Filtros por tipo -->
+      <div class="tipo-filters">
+        <button class="filter-btn" [class.active]="tipoSeleccionado === null" (click)="filtrarPorTipo(null)">
+          Todos
+        </button>        <button class="filter-btn" [class.active]="tipoSeleccionado === TipoMicropedido.BEBIDA" (click)="filtrarPorTipo(TipoMicropedido.BEBIDA)">
+          <i class="material-icons">local_drink</i> Bebidas
+        </button>
+        <button class="filter-btn" [class.active]="tipoSeleccionado === TipoMicropedido.SNACK" (click)="filtrarPorTipo(TipoMicropedido.SNACK)">
+          <i class="material-icons">fastfood</i> Snacks
+        </button>
+        <button class="filter-btn" [class.active]="tipoSeleccionado === TipoMicropedido.POSTRE" (click)="filtrarPorTipo(TipoMicropedido.POSTRE)">
+          <i class="material-icons">cake</i> Postres
+        </button>
+        <button class="filter-btn" [class.active]="tipoSeleccionado === TipoMicropedido.ACOMPANAMIENTO" (click)="filtrarPorTipo(TipoMicropedido.ACOMPANAMIENTO)">
+          <i class="material-icons">more_horiz</i> Acompañamientos
+        </button>
+      </div>
+
+      <!-- Opciones -->
+      <div class="opciones-grid" *ngIf="!loadingOpciones">
+        <div class="opcion-card" *ngFor="let opcion of opcionesFiltradas" [class.disabled]="!opcion.disponible">
+          <div class="opcion-info">
+            <h4>{{ opcion.nombre }}</h4>
+            <p class="descripcion">{{ opcion.descripcion }}</p>
+            <p class="precio">${{ opcion.precio | number:'1.0-0' }}</p>
+            <p class="tiempo" *ngIf="opcion.tiempoPreparacion">
+              <i class="material-icons">schedule</i> {{ opcion.tiempoPreparacion }} min
+            </p>
+          </div>
+          <div class="opcion-actions" *ngIf="opcion.disponible">
+            <button class="add-btn" (click)="agregarItem(opcion)">
+              <i class="material-icons">add</i>
+            </button>
+          </div>
+          <div class="no-disponible" *ngIf="!opcion.disponible">
+            No disponible
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingOpciones">
+        <p>Cargando opciones...</p>
+      </div>
+    </div>
+
+    <!-- Carrito de micropedido -->
+    <div class="carrito-section" *ngIf="itemsCarrito.length > 0">
+      <h3>Tu Micropedido</h3>
+      
+      <div class="carrito-items">
+        <div class="carrito-item" *ngFor="let item of itemsCarrito; let i = index">
+          <div class="item-info">
+            <h4>{{ item.nombre }}</h4>
+            <p>{{ item.tipo }}</p>
+          </div>
+          <div class="item-controls">
+            <button class="quantity-btn" (click)="cambiarCantidad(i, -1)">-</button>
+            <span class="quantity">{{ item.cantidad }}</span>
+            <button class="quantity-btn" (click)="cambiarCantidad(i, 1)">+</button>
+          </div>
+          <div class="item-precio">
+            ${{ (item.precio * item.cantidad) | number:'1.0-0' }}
+          </div>
+          <button class="remove-btn" (click)="removerItem(i)">
+            <i class="material-icons">delete</i>
+          </button>
+        </div>
+      </div>
+
+      <div class="carrito-total">
+        <h4>Total: ${{ calcularTotal() | number:'1.0-0' }}</h4>
+        <p *ngIf="tiempoEstimadoTotal > 0">
+          <i class="material-icons">schedule</i> 
+          Tiempo estimado: {{ tiempoEstimadoTotal }} minutos
+        </p>
+      </div>
+
+      <!-- Formulario de micropedido -->
+      <div class="micropedido-form">
+        <div class="form-group">
+          <label for="mesa">Mesa:</label>
+          <input type="number" id="mesa" [(ngModel)]="mesa" min="1" max="50" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="observaciones">Observaciones:</label>
+          <textarea id="observaciones" [(ngModel)]="observaciones" 
+                   placeholder="Observaciones especiales (opcional)"></textarea>
+        </div>
+
+        <button class="submit-btn" (click)="crearMicropedido()" [disabled]="procesando || mesa <= 0">
+          <i class="material-icons">{{ procesando ? 'hourglass_empty' : 'send' }}</i>
+          {{ procesando ? 'Procesando...' : 'Crear Micropedido' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mis Micropedidos -->
+  <div *ngIf="activeTab === 'mis-micropedidos'" class="tab-content">
+    <div class="filtros-micropedidos">
+      <button class="filter-btn" [class.active]="filtroEstado === null" (click)="filtrarPorEstado(null)">
+        Todos
+      </button>      <button class="filter-btn" [class.active]="filtroEstado === EstadoMicropedido.PENDIENTE" (click)="filtrarPorEstado(EstadoMicropedido.PENDIENTE)">
+        Pendientes
+      </button>
+      <button class="filter-btn" [class.active]="filtroEstado === EstadoMicropedido.PREPARANDO" (click)="filtrarPorEstado(EstadoMicropedido.PREPARANDO)">
+        En Preparación
+      </button>
+      <button class="filter-btn" [class.active]="filtroEstado === EstadoMicropedido.LISTO" (click)="filtrarPorEstado(EstadoMicropedido.LISTO)">
+        Listos
+      </button>
+    </div>
+
+    <div class="micropedidos-list" *ngIf="!loadingMicropedidos">
+      <div class="micropedido-card" *ngFor="let micropedido of micropedidosFiltrados" 
+           [class]="'estado-' + micropedido.estado.toLowerCase()">
+        <div class="micropedido-header">
+          <h4>Micropedido #{{ micropedido.id?.substring(0, 8) }}</h4>
+          <span class="estado-badge">{{ getEstadoTexto(micropedido.estado) }}</span>
+        </div>
+        
+        <div class="micropedido-info">
+          <p><i class="material-icons">table_restaurant</i> Mesa: {{ micropedido.mesa }}</p>
+          <p><i class="material-icons">access_time</i> 
+             {{ micropedido.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+          <p *ngIf="micropedido.tiempoEstimado">
+            <i class="material-icons">schedule</i> 
+            Tiempo estimado: {{ micropedido.tiempoEstimado }} min
+          </p>
+        </div>
+
+        <div class="micropedido-items">
+          <div class="item" *ngFor="let item of micropedido.items">
+            <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+            <span class="item-precio">${{ (item.precio * item.cantidad) | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div class="micropedido-footer">
+          <div class="total">
+            <strong>Total: ${{ micropedido.total | number:'1.0-0' }}</strong>
+          </div>
+          <div class="actions" *ngIf="micropedido.estado === 'PENDIENTE'">
+            <button class="cancel-btn" (click)="cancelarMicropedido(micropedido)">
+              <i class="material-icons">cancel</i> Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="micropedidosFiltrados.length === 0">
+        <p>No tienes micropedidos {{ filtroEstado ? 'con estado ' + getEstadoTexto(filtroEstado).toLowerCase() : '' }}</p>
+      </div>
+    </div>
+
+    <div class="loading" *ngIf="loadingMicropedidos">
+      <p>Cargando micropedidos...</p>
+    </div>
+  </div>
+</div>

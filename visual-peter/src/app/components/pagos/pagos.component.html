@@ -1,0 +1,322 @@
+<div class="container">
+  <h2><i class="material-icons">payment</i> Sistema de Pagos</h2>
+
+  <!-- Pestañas principales -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'procesar'" (click)="cambiarTab('procesar')">
+      <i class="material-icons">credit_card</i> Procesar Pago
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'historial'" (click)="cambiarTab('historial')">
+      <i class="material-icons">history</i> Historial ({{ pagos.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'estadisticas'" (click)="cambiarTab('estadisticas')">
+      <i class="material-icons">analytics</i> Estadísticas
+    </button>
+  </div>
+
+  <!-- Procesar Pago -->
+  <div *ngIf="activeTab === 'procesar'" class="procesar-section">
+    <div class="pago-form">
+      <h3>Nuevo Pago</h3>
+
+      <!-- Información del pedido -->
+      <div class="form-group">
+        <label for="pedidoId">ID del Pedido:</label>
+        <input type="text" id="pedidoId" [(ngModel)]="nuevoPago.pedidoId"
+               placeholder="Ingrese el ID del pedido" required>
+      </div>
+
+      <div class="form-group">
+        <label for="monto">Monto a Pagar:</label>
+        <input type="number" id="monto" [(ngModel)]="nuevoPago.monto"
+               placeholder="0" min="0" step="100" required>
+      </div>
+
+      <!-- Selección de método de pago -->
+      <div class="form-group">
+        <label>Método de Pago:</label>
+        <div class="metodos-pago">
+          <button class="metodo-btn"
+                  [class.active]="nuevoPago.metodoPago === MetodoPago.EFECTIVO"
+                  (click)="seleccionarMetodo(MetodoPago.EFECTIVO)">
+            <i class="material-icons">attach_money</i>
+            Efectivo
+          </button>
+          <button class="metodo-btn"
+                  [class.active]="nuevoPago.metodoPago === MetodoPago.TARJETA_CREDITO"
+                  (click)="seleccionarMetodo(MetodoPago.TARJETA_CREDITO)">
+            <i class="material-icons">credit_card</i>
+            Tarjeta Crédito
+          </button>
+          <button class="metodo-btn"
+                  [class.active]="nuevoPago.metodoPago === MetodoPago.TARJETA_DEBITO"
+                  (click)="seleccionarMetodo(MetodoPago.TARJETA_DEBITO)">
+            <i class="material-icons">payment</i>
+            Tarjeta Débito
+          </button>
+          <button class="metodo-btn"
+                  [class.active]="nuevoPago.metodoPago === MetodoPago.NEQUI"
+                  (click)="seleccionarMetodo(MetodoPago.NEQUI)">
+            <i class="material-icons">phone_android</i>
+            Nequi
+          </button>
+          <button class="metodo-btn"
+                  [class.active]="nuevoPago.metodoPago === MetodoPago.PSE"
+                  (click)="seleccionarMetodo(MetodoPago.PSE)">
+            <i class="material-icons">account_balance</i>
+            PSE
+          </button>
+          <button class="metodo-btn"
+                  [class.active]="nuevoPago.metodoPago === MetodoPago.DAVIPLATA"
+                  (click)="seleccionarMetodo(MetodoPago.DAVIPLATA)">
+            <i class="material-icons">mobile_friendly</i>
+            Daviplata
+          </button>
+        </div>
+      </div>
+
+      <!-- Formularios específicos por método -->
+      <!-- Tarjeta de Crédito/Débito -->
+      <div *ngIf="nuevoPago.metodoPago === MetodoPago.TARJETA_CREDITO || nuevoPago.metodoPago === MetodoPago.TARJETA_DEBITO"
+           class="metodo-form">
+        <h4>Datos de la Tarjeta</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numeroTarjeta">Número de Tarjeta:</label>            <input type="text" id="numeroTarjeta" [(ngModel)]="datosTarjeta.numeroTarjeta"
+                   placeholder="1234 5678 9012 3456" maxlength="19">
+          </div>
+          <div class="form-group">
+            <label for="cvv">CVV:</label>
+            <input type="text" id="cvv" [(ngModel)]="datosTarjeta.cvv"
+                   placeholder="123" maxlength="4">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="mesExpiracion">Mes:</label>
+            <select id="mesExpiracion" [(ngModel)]="datosTarjeta.mesExpiracion">
+              <option value="">Mes</option>
+              <option *ngFor="let mes of getMeses()" [value]="mes.value">{{ mes.label }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="anioExpiracion">Año:</label>
+            <select id="anioExpiracion" [(ngModel)]="datosTarjeta.anoExpiracion">
+              <option value="">Año</option>
+              <option *ngFor="let anio of getAnios()" [value]="anio">{{ anio }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="nombreTarjeta">Nombre del Titular:</label>          <input type="text" id="nombreTarjeta" [(ngModel)]="datosTarjeta.nombreTarjeta"
+                 placeholder="Nombre como aparece en la tarjeta">
+        </div>
+      </div>
+
+      <!-- Nequi -->
+      <div *ngIf="nuevoPago.metodoPago === MetodoPago.NEQUI" class="metodo-form">
+        <h4>Datos de Nequi</h4>
+        <div class="form-group">
+          <label for="telefonoNequi">Número de Teléfono:</label>
+          <input type="tel" id="telefonoNequi" [(ngModel)]="datosNequi.telefono"
+                 placeholder="300 123 4567">
+        </div>
+        <div class="form-group">
+          <label for="pinNequi">PIN de Nequi:</label>          <input type="password" id="pinNequi" [(ngModel)]="datosNequi.codigoVerificacion"
+                 placeholder="****" maxlength="4">
+        </div>
+      </div>
+
+      <!-- PSE -->
+      <div *ngIf="nuevoPago.metodoPago === MetodoPago.PSE" class="metodo-form">
+        <h4>Datos PSE</h4>
+        <div class="form-group">
+          <label for="bancoPSE">Banco:</label>
+          <select id="bancoPSE" [(ngModel)]="datosPSE.banco">
+            <option value="">Seleccione su banco</option>
+            <option value="bancolombia">Bancolombia</option>
+            <option value="bancodebogota">Banco de Bogotá</option>
+            <option value="bbva">BBVA</option>
+            <option value="davivienda">Davivienda</option>
+            <option value="colpatria">Colpatria</option>
+            <option value="avvillas">AV Villas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tipoDocumentoPSE">Tipo de Documento:</label>
+          <select id="tipoDocumentoPSE" [(ngModel)]="datosPSE.tipoDocumento">
+            <option value="">Seleccione</option>
+            <option value="CC">Cédula de Ciudadanía</option>
+            <option value="CE">Cédula de Extranjería</option>
+            <option value="NIT">NIT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="numeroDocumentoPSE">Número de Documento:</label>
+          <input type="text" id="numeroDocumentoPSE" [(ngModel)]="datosPSE.numeroDocumento"
+                 placeholder="Ingrese su número de documento">
+        </div>
+      </div>
+
+      <!-- Daviplata -->
+      <div *ngIf="nuevoPago.metodoPago === MetodoPago.DAVIPLATA" class="metodo-form">
+        <h4>Datos de Daviplata</h4>
+        <div class="form-group">
+          <label for="telefonoDaviplata">Número de Teléfono:</label>
+          <input type="tel" id="telefonoDaviplata" [(ngModel)]="datosDaviplata.telefono"
+                 placeholder="300 123 4567">
+        </div>
+        <div class="form-group">
+          <label for="claveDaviplata">Clave:</label>          <input type="password" id="claveDaviplata" [(ngModel)]="datosDaviplata.pin"
+                 placeholder="Ingrese su clave">
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="form-actions">
+        <button class="btn-cancelar" (click)="cancelarPago()">
+          <i class="material-icons">cancel</i> Cancelar
+        </button>
+        <button class="btn-procesar"
+                [disabled]="!nuevoPago.pedidoId || !nuevoPago.monto || !nuevoPago.metodoPago || procesando"
+                (click)="procesarPago()">
+          <i class="material-icons">{{ procesando ? 'hourglass_empty' : 'payment' }}</i>
+          {{ procesando ? 'Procesando...' : 'Procesar Pago' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de Pagos -->
+  <div *ngIf="activeTab === 'historial'" class="historial-section">
+    <div class="section-header">
+      <h3>Historial de Pagos</h3>
+      <div class="filtros-historial">
+        <select [(ngModel)]="filtroEstado" (change)="filtrarPagos()">
+          <option value="">Todos los estados</option>
+          <option value="PENDIENTE">Pendientes</option>
+          <option value="PROCESANDO">Procesando</option>
+          <option value="APROBADO">Aprobados</option>
+          <option value="RECHAZADO">Rechazados</option>
+          <option value="CANCELADO">Cancelados</option>
+          <option value="REEMBOLSADO">Reembolsados</option>
+        </select>
+        <button class="refresh-btn" (click)="cargarPagos()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+    </div>
+
+    <div class="pagos-grid" *ngIf="!loadingPagos">
+      <div class="pago-card" *ngFor="let pago of pagosFiltrados" [ngClass]="pago.estado.toLowerCase()">
+        <div class="pago-header">
+          <h4>Pago #{{ pago.id?.substring(0, 8) || 'Sin ID' }}</h4>
+          <span class="pago-estado" [ngClass]="pago.estado.toLowerCase()">
+            {{ getEstadoLabel(pago.estado) }}
+          </span>
+        </div>
+
+        <div class="pago-info">
+          <p><i class="material-icons">receipt</i> Pedido: #{{ pago.pedidoId.substring(0, 8) }}</p>
+          <p><i class="material-icons">attach_money</i> Monto: {{ pago.monto | currency:'COP':'symbol':'1.0-0' }}</p>
+          <p><i class="material-icons">payment</i> Método: {{ getMetodoLabel(pago.metodoPago) }}</p>
+          <p><i class="material-icons">schedule</i> Fecha: {{ pago.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+          <p *ngIf="pago.fechaProcesamiento">
+            <i class="material-icons">done</i> Procesado: {{ pago.fechaProcesamiento | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+        </div>        <div class="pago-actions" *ngIf="pago.estado === 'PENDIENTE' && pago.id">
+          <button class="action-btn cancel-btn" (click)="cancelarPagoExistente(pago.id!)">
+            <i class="material-icons">cancel</i> Cancelar
+          </button>
+          <button class="action-btn retry-btn" (click)="reprocesarPago(pago.id!)">
+            <i class="material-icons">refresh</i> Reintentar
+          </button>
+        </div>
+
+        <div class="pago-actions" *ngIf="pago.estado === 'APROBADO' && pago.id">
+          <button class="action-btn refund-btn" (click)="solicitarReembolso(pago.id!)">
+            <i class="material-icons">undo</i> Reembolsar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading" *ngIf="loadingPagos">
+      <p>Cargando historial de pagos...</p>
+    </div>
+
+    <div class="no-pagos" *ngIf="!loadingPagos && pagosFiltrados.length === 0">
+      <p>No se encontraron pagos con los filtros seleccionados.</p>
+    </div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div *ngIf="activeTab === 'estadisticas'" class="estadisticas-section">
+    <h3>Estadísticas de Pagos</h3>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <i class="material-icons">trending_up</i>
+        <div class="stat-info">
+          <h3>{{ estadisticas.totalPagos }}</h3>
+          <p>Total Pagos</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="material-icons">attach_money</i>
+        <div class="stat-info">
+          <h3>{{ estadisticas.montoTotal | currency:'COP':'symbol':'1.0-0' }}</h3>
+          <p>Monto Total</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="material-icons">check_circle</i>
+        <div class="stat-info">
+          <h3>{{ estadisticas.pagosAprobados }}</h3>
+          <p>Aprobados</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="material-icons">error</i>
+        <div class="stat-info">
+          <h3>{{ estadisticas.pagosRechazados }}</h3>
+          <p>Rechazados</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="material-icons">percent</i>
+        <div class="stat-info">
+          <h3>{{ estadisticas.tasaExito }}%</h3>
+          <p>Tasa de Éxito</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="material-icons">star</i>
+        <div class="stat-info">
+          <h3>{{ getMetodoMasUsado() }}</h3>
+          <p>Método Favorito</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-section">
+      <div class="chart-card">
+        <h4>Métodos de Pago Más Utilizados</h4>
+        <div class="metodos-stats">
+          <div class="metodo-stat" *ngFor="let metodo of estadisticas.metodosPorUso">
+            <span class="metodo-nombre">{{ getMetodoLabel(metodo.metodo) }}</span>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="(metodo.cantidad / estadisticas.totalPagos) * 100"></div>
+            </div>
+            <span class="metodo-cantidad">{{ metodo.cantidad }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensajes de estado -->
+  <div class="status-message" *ngIf="mensajeEstado" [ngClass]="tipoMensaje">
+    <p>{{ mensajeEstado }}</p>
+  </div>
+</div>

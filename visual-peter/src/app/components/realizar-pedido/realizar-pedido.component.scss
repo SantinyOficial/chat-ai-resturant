@@ -1,0 +1,299 @@
+.realizar-pedido-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.pedido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h3 {
+    color: #ffcc29;
+    margin: 0;
+  }
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.pedido-content {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.menu-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-filter {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 12px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.active, &:hover {
+    background: #ffcc29;
+    color: #181818;
+  }
+}
+
+.menu-items-container {
+  background: #222;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 2px solid #ffcc29;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.menu-category {
+  margin-bottom: 25px;
+
+  h4 {
+    color: #ffcc29;
+    margin-top: 0;
+  }
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #303030;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+.item-name {
+  flex: 1;
+  color: #fff;
+}
+
+.item-price {
+  color: #ffcc29;
+  font-weight: bold;
+  margin: 0 15px;
+}
+
+.add-button {
+  padding: 6px 12px;
+  background: #ffcc29;
+  color: #181818;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #ffdd54;
+    box-shadow: 0 0 8px #ffcc29;
+  }
+}
+
+.pedido-resumen {
+  background: #222;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 2px solid #ffcc29;
+  height: fit-content;
+
+  h4 {
+    color: #ffcc29;
+    margin-top: 0;
+  }
+}
+
+.cliente-info {
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    color: #fff;
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+  }
+
+  &.observaciones textarea {
+    min-height: 60px;
+    resize: vertical;
+  }
+}
+
+.pedido-items {
+  min-height: 100px;
+  margin-bottom: 20px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.no-items {
+  text-align: center;
+  color: #888;
+  margin-top: 30px;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #303030;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.item-details {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.item-quantity {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  min-width: 70px;
+}
+
+.quantity-btn {
+  width: 24px;
+  height: 24px;
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+
+  &:hover {
+    background: #555;
+  }
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #ff5252;
+  cursor: pointer;
+  font-size: 16px;
+
+  &:hover {
+    color: #ff0000;
+  }
+}
+
+.pedido-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-top: 1px solid #333;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.total-price {
+  color: #ffcc29;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.confirm-button {
+  width: 100%;
+  padding: 12px;
+  background: #ffcc29;
+  color: #181818;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: #ffdd54;
+    box-shadow: 0 0 8px #ffcc29;
+  }
+
+  &:disabled {
+    background: #444;
+    color: #777;
+    cursor: not-allowed;
+  }
+}
+
+.order-status {
+  margin-top: 15px;
+}
+
+.status-message {
+  text-align: center;
+  padding: 10px;
+  border-radius: 4px;
+  font-weight: bold;
+
+  &.success {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+  }
+
+  &.error {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+  }
+
+  &.pending {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+  }
+}
+
+@media (max-width: 768px) {
+  .pedido-content {
+    grid-template-columns: 1fr;
+  }
+}

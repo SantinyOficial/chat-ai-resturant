@@ -1,0 +1,65 @@
+<div class="container">
+  <h2>Gestión de Pedidos</h2>
+
+  <div class="status-filters">
+    <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterPedidos('all')">Todos</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'PENDIENTE'" (click)="filterPedidos('PENDIENTE')">Pendientes</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'EN_PREPARACION'" (click)="filterPedidos('EN_PREPARACION')">En Preparación</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'LISTO'" (click)="filterPedidos('LISTO')">Listos</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'ENTREGADO'" (click)="filterPedidos('ENTREGADO')">Entregados</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'CANCELADO'" (click)="filterPedidos('CANCELADO')">Cancelados</button>
+  </div>
+
+  <div class="pedidos-grid">
+    <div *ngIf="filteredPedidos.length === 0" class="no-pedidos">
+      <p>No hay pedidos con el filtro seleccionado.</p>
+    </div>
+
+    <div class="pedido-card" *ngFor="let pedido of filteredPedidos" [ngClass]="pedido.estado.toLowerCase()">
+      <div class="pedido-header">
+        <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8) || 'Nuevo'}}</span>
+        <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
+      </div>
+      <div class="pedido-content">
+        <h4>Detalle del Pedido</h4>
+        <ul class="pedido-items">
+          <li *ngFor="let item of pedido.items">
+            {{item.cantidad}} x {{item.nombre}}
+          </li>
+        </ul>
+        <div class="pedido-info">
+          <p><strong>Mesa:</strong> {{pedido.mesa}}</p>
+          <p><strong>Cliente:</strong> {{pedido.clienteNombre}}</p>
+          <p><strong>Hora:</strong> {{pedido.fechaCreacion | date:'HH:mm'}}</p>
+          <p><strong>Total:</strong> {{pedido.total | currency:'COP':'symbol':'1.0-0'}}</p>
+          <p *ngIf="pedido.observaciones"><strong>Observaciones:</strong> {{pedido.observaciones}}</p>
+        </div>
+      </div>
+      <div class="pedido-actions">
+        <ng-container [ngSwitch]="pedido.estado">
+          <ng-container *ngSwitchCase="'PENDIENTE'">
+            <button class="action-btn accept" (click)="changeStatus(pedido, 'EN_PREPARACION')">Aceptar</button>
+            <button class="action-btn cancel" (click)="changeStatus(pedido, 'CANCELADO')">Cancelar</button>
+          </ng-container>
+
+          <ng-container *ngSwitchCase="'EN_PREPARACION'">
+            <button class="action-btn ready" (click)="changeStatus(pedido, 'LISTO')">Listo para Entregar</button>
+            <button class="action-btn cancel" (click)="changeStatus(pedido, 'CANCELADO')">Cancelar</button>
+          </ng-container>
+
+          <ng-container *ngSwitchCase="'LISTO'">
+            <button class="action-btn deliver" (click)="changeStatus(pedido, 'ENTREGADO')">Marcar como Entregado</button>
+          </ng-container>
+
+          <ng-container *ngSwitchCase="'ENTREGADO'">
+            <p class="status-message delivered">Este pedido ha sido entregado</p>
+          </ng-container>
+
+          <ng-container *ngSwitchCase="'CANCELADO'">
+            <p class="status-message cancelled">Este pedido ha sido cancelado</p>
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>
