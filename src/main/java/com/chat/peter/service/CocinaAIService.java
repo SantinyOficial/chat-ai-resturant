@@ -77,10 +77,9 @@ public class CocinaAIService {
                         "Ups, hubo un problemita: " + resultado.getMensaje() + 
                         ". ¿Puedes intentar de nuevo?"
                     );
-                }
-            } else {
-                // Para conversaciones generales, crear un resultado exitoso
-                respuesta.setResultadoEjecucion(new ResultadoAccion(true, "Conversación procesada", null));
+                }            } else {
+                // Para conversaciones generales, crear un resultado exitoso sin mensaje técnico
+                respuesta.setResultadoEjecucion(new ResultadoAccion(true, "", null));
             }
             
             return respuesta;

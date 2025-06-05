@@ -1,6 +1,6 @@
 <div class="container">
   <h2><i class="material-icons">receipt_long</i> Mis Pedidos</h2>
-  
+
   <div class="filtros">
     <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterPedidos('all')">Todos</button>
     <button class="filter-btn" [class.active]="selectedFilter === 'activos'" (click)="filterPedidos('activos')">Activos</button>
@@ -36,12 +36,30 @@
           <li *ngFor="let item of pedido.items">
             {{item.cantidad}} x {{item.nombre}}
           </li>
-        </ul>
-        <div class="pedido-info">
+        </ul>        <div class="pedido-info">
           <p><strong>Mesa:</strong> {{pedido.mesa}}</p>
           <p><strong>Total:</strong> {{pedido.total | currency:'COP':'symbol':'1.0-0'}}</p>
           <p><strong>Fecha:</strong> {{pedido.fechaCreacion | date:'dd/MM/yyyy H:mm'}}</p>
           <p *ngIf="pedido.observaciones"><strong>Observaciones:</strong> {{pedido.observaciones}}</p>
+
+          <!-- Estado de pago -->
+          <div class="pago-estado" *ngIf="pedido.id">
+            <p><strong>Estado de Pago:</strong>
+              <span class="estado-badge" [ngClass]="'estado-' + getEstadoPago(pedido.id)">
+                {{getEstadoPagoLabel(getEstadoPago(pedido.id))}}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Componente de pago -->
+        <div *ngIf="pedido.id && necesitaPago(pedido)" class="pago-section">
+          <app-pago-cliente
+            [pedidoId]="pedido.id"
+            [monto]="pedido.total"
+            [estadoPago]="getEstadoPago(pedido.id)"
+            (pagoCompletado)="onPagoCompletado($event)">
+          </app-pago-cliente>
         </div>
       </div>
       <div class="pedido-progress" *ngIf="pedido.estado !== 'ENTREGADO' && pedido.estado !== 'CANCELADO'">

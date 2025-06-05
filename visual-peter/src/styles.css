@@ -3,11 +3,18 @@
   --primary-color: #ffcc29;
   --background-dark: #181818;
   --background-medium: #222;
+  --background-light: #333;
   --text-light: #ffffff;
+  --text-secondary: #aaaaaa;
   --text-primary: #ffcc29;
+  --border-color: #444;
+  --border-light: #333;
   --border-radius: 8px;
   --box-shadow: 0 0 15px rgba(0,0,0,0.2);
   --transition-speed: 0.3s;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --success-color: #4caf50;
 }
 
 * {
@@ -72,4 +79,43 @@ a {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #e6b800;
+}
+
+/* Estilos mejorados para estados de carga en la demo */
+.demo-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.demo-loading .spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 204, 41, 0.3);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+.demo-loading .loading-text {
+  color: var(--primary-color);
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.demo-loading .loading-subtext {
+  color: var(--text-light);
+  opacity: 0.7;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

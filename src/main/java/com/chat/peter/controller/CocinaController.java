@@ -235,16 +235,17 @@ public class CocinaController {
                 response.put("success", false);
                 response.put("mensaje", "Comando de lenguaje natural requerido");
                 return ResponseEntity.badRequest().body(response);
-            }
-              CocinaAIService.RespuestaAICocina respuestaAI = cocinaAIService.procesarComandoNatural(comandoNatural, null);
+            }            CocinaAIService.RespuestaAICocina respuestaAI = cocinaAIService.procesarComandoNatural(comandoNatural, null);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", respuestaAI.getResultadoEjecucion().isExitoso());
-            response.put("mensaje", respuestaAI.getResultadoEjecucion().getMensaje());
+            // Usar la respuesta natural del LLM como mensaje principal para el usuario
+            response.put("mensaje", respuestaAI.getRespuestaUsuario());
             response.put("accion", respuestaAI.getAccion());
             response.put("mesa", respuestaAI.getParametros().get("mesa"));
             response.put("confianza", respuestaAI.getConfianza());
-            response.put("respuestaAI", respuestaAI.getRespuestaUsuario());
+            // Mantener el resultado técnico por separado para debugging
+            response.put("resultadoTecnico", respuestaAI.getResultadoEjecucion().getMensaje());
             response.put("comandoOriginal", comandoNatural);
             
             return ResponseEntity.ok(response);

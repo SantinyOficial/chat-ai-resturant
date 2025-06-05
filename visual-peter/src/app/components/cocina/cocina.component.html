@@ -1,80 +1,6 @@
-<div class="container">  <div class="header-section">
-    <h2><i class="material-icons">restaurant</i> Gestión de Cocina</h2>    <!-- Sistema Viernes - Escucha Continua Estilo Alexa -->
-    <div class="viernes-controls">
-      <div [class]="viernesClasesCSS">
-        <div class="viernes-indicator">
-          <i class="material-icons">{{ viernesActivo ? 'mic' : 'mic_off' }}</i>
-          <!-- Efectos visuales dinámicos -->
-          <div class="pulse-ring" *ngIf="estadoVozViernes === 'listening'"></div>
-          <div class="siri-waves" *ngIf="estadoVozViernes === 'processing'">
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
-          </div>
-          <div class="chatgpt-audio" *ngIf="estadoVozViernes === 'speaking'">
-            <div class="audio-bar"></div>
-            <div class="audio-bar"></div>
-            <div class="audio-bar"></div>
-            <div class="audio-bar"></div>
-            <div class="audio-bar"></div>
-          </div>
-        </div>
-        <div class="viernes-info">
-          <h3>🤖 Viernes AI</h3>
-          <p class="status">{{ estadoViernes }}</p>
-          <p class="instructions" *ngIf="viernesActivo && estadoVozViernes === 'listening'">
-            Di: <strong>"Viernes"</strong> + tu comando
-          </p>
-        </div>
-      </div>
-
-      <div class="ultimo-comando" *ngIf="ultimoComando">
-        <small><i class="material-icons">record_voice_over</i> "{{ ultimoComando }}"</small>
-      </div>
-
-      <div class="respuesta-ia" *ngIf="ultimaRespuestaAI?.respuestaAI">
-        <small><i class="material-icons">smart_toy</i> "{{ ultimaRespuestaAI?.respuestaAI }}"</small>
-      </div>
-    </div>
-  </div>  <!-- Panel de Testing de Comandos con Viernes IA -->
-  <div class="voice-testing" *ngIf="soporteVoz">
-    <details>
-      <summary>🤖 Test de Viernes IA - Comandos Naturales</summary>
-      <div class="test-controls">
-        <input
-          type="text"
-          [(ngModel)]="comandoManual"
-          placeholder='Ej: "Viernes, mesa 5 ya está lista", "Viernes, empezar con la mesa 3"'
-          (keyup.enter)="enviarComandoManual()">
-        <button (click)="enviarComandoManual()" [disabled]="!comandoManual.trim() || procesandoComandoIA">
-          <i class="material-icons">{{ procesandoComandoIA ? 'hourglass_empty' : 'send' }}</i>
-          {{ procesandoComandoIA ? 'Procesando...' : 'Enviar a Viernes' }}
-        </button>
-      </div>
-      <div class="ejemplos-comandos">
-        <p><strong>Comandos naturales que entiende Viernes:</strong></p>
-        <ul>
-          <li>"Viernes, hola" → Conversación general</li>
-          <li>"Viernes, mesa 5 ya está lista" → Marcar pedido como listo</li>
-          <li>"Viernes, voy a empezar con la mesa 3" → Iniciar preparación</li>
-          <li>"Viernes, ¿cómo van los pedidos?" → Consultar estado general</li>
-          <li>"Viernes, necesito pausar mesa 7" → Pausar pedido</li>
-        </ul>
-        <div class="viernes-tip">
-          <i class="material-icons">lightbulb</i>
-          <span><strong>Tip:</strong> Viernes está siempre escuchando. Solo di "Viernes" + tu comando sin presionar botones.</span>
-        </div>
-      </div>
-      <div class="info-ia" *ngIf="ultimaRespuestaAI">
-        <p><strong>Última respuesta de Viernes:</strong> {{ infoUltimaRespuestaAI }}</p>
-      </div>
-    </details>
-  </div>
-
-  <!-- Indicador visual de escucha -->
-  <div class="voice-indicator" *ngIf="escuchandoVoz">
-    <div class="pulse-animation"></div>
-    <span><i class="material-icons">mic</i> Escuchando comandos de cocina...</span>
+<div class="container">
+  <div class="header-section">
+    <h2><i class="material-icons">restaurant</i> Gestión de Cocina</h2>
   </div>
 
   <!-- Estadísticas -->
@@ -206,10 +132,10 @@
             </button>
           </div>
         </div>
-      </div>
-
-      <div class="loading" *ngIf="loadingPendientes">
-        <p>Cargando pedidos pendientes...</p>
+      </div>      <div class="demo-loading" *ngIf="loadingPendientes">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando pedidos pendientes</p>
+        <p class="loading-subtext">Actualizando información en tiempo real...</p>
       </div>
 
       <div class="no-pedidos" *ngIf="!loadingPendientes && pedidosPendientes.length === 0">
@@ -279,10 +205,10 @@
             </button>
           </div>
         </div>
-      </div>
-
-      <div class="loading" *ngIf="loadingPreparacion">
-        <p>Cargando pedidos en preparación...</p>
+      </div>      <div class="demo-loading" *ngIf="loadingPreparacion">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando pedidos en preparación</p>
+        <p class="loading-subtext">Consultando el estado de la cocina...</p>
       </div>
     </div>
 
@@ -328,10 +254,10 @@
             </button>
           </div>
         </div>
-      </div>
-
-      <div class="loading" *ngIf="loadingListos">
-        <p>Cargando pedidos listos...</p>
+      </div>      <div class="demo-loading" *ngIf="loadingListos">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando pedidos listos</p>
+        <p class="loading-subtext">Verificando pedidos completados...</p>
       </div>
     </div>
 
@@ -373,11 +299,14 @@
             </button>
           </div>
         </div>
-      </div>
-
-      <div class="loading" *ngIf="loadingCocineros">
-        <p>Cargando cocineros...</p>
+      </div>      <div class="demo-loading" *ngIf="loadingCocineros">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando información del personal</p>
+        <p class="loading-subtext">Consultando cocineros disponibles...</p>
       </div>
     </div>
   </div>
+
+  <!-- Componente IA Asistente -->
+  <app-ia-asistente></app-ia-asistente>
 </div>

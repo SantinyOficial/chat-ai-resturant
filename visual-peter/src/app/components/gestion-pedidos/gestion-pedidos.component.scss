@@ -115,6 +115,13 @@ h2 {
   color: #fff;
 }
 
+.status-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
 .pedido-status {
   padding: 4px 8px;
   border-radius: 4px;
@@ -167,6 +174,13 @@ h2 {
   &.accept {
     background: #4caf50;
     color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .material-icons {
+      font-size: 18px;
+    }
   }
 
   &.cancel {
@@ -206,14 +220,70 @@ h2 {
   border-radius: 4px;
   width: 100%;
 
-  &.delivered {
-    background: rgba(158, 158, 158, 0.2);
-    color: #9e9e9e;
-  }
-
+  &.delivered,
   &.cancelled {
-    background: rgba(244, 67, 54, 0.2);
-    color: #f44336;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    .material-icons {
+      font-size: 18px;
+    }
+  }
+}
+
+.pago-status {
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.pago-status.pendiente_pago {
+  background: #ff9800;
+  color: #000;
+}
+
+.pago-status.procesando_pago {
+  background: #2196f3;
+  color: #fff;
+  animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+.pago-status.pago_realizado {
+  background: #4caf50;
+  color: #000;
+}
+
+.pago-status.pago_fallido {
+  background: #f44336;
+  color: #fff;
+}
+
+.pago-pendiente {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid #ff9800;
+  border-radius: 4px;
+  color: #ff9800;
+  font-size: 0.9rem;
+
+  .material-icons {
+    font-size: 18px;
+  }
+}
+
+@keyframes pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.6;
   }
 }
 

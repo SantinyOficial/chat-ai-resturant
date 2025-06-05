@@ -13,12 +13,15 @@
   <div class="pedidos-grid">
     <div *ngIf="filteredPedidos.length === 0" class="no-pedidos">
       <p>No hay pedidos con el filtro seleccionado.</p>
-    </div>
-
-    <div class="pedido-card" *ngFor="let pedido of filteredPedidos" [ngClass]="pedido.estado.toLowerCase()">
+    </div>    <div class="pedido-card" *ngFor="let pedido of filteredPedidos" [ngClass]="pedido.estado.toLowerCase()">
       <div class="pedido-header">
         <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8) || 'Nuevo'}}</span>
-        <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
+        <div class="status-badges">
+          <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
+          <span class="pago-status" [ngClass]="getEstadoPago(pedido.id!).toLowerCase()">
+            {{getEstadoPagoLabel(getEstadoPago(pedido.id!))}}
+          </span>
+        </div>
       </div>
       <div class="pedido-content">
         <h4>Detalle del Pedido</h4>
@@ -38,7 +41,26 @@
       <div class="pedido-actions">
         <ng-container [ngSwitch]="pedido.estado">
           <ng-container *ngSwitchCase="'PENDIENTE'">
-            <button class="action-btn accept" (click)="changeStatus(pedido, 'EN_PREPARACION')">Aceptar</button>
+            <ng-container [ngSwitch]="getEstadoPago(pedido.id!)">
+              <ng-container *ngSwitchCase="EstadoPagoPedido.PROCESANDO_PAGO">
+                <div class="pago-procesando">
+                  <i class="material-icons spinner">sync</i>
+                  <span>Procesando pago...</span>
+                </div>
+              </ng-container>
+              <ng-container *ngSwitchCase="EstadoPagoPedido.PENDIENTE_PAGO">
+                <div class="pago-pendiente">
+                  <i class="material-icons">payment</i>
+                  <span>Esperando confirmación de pago</span>
+                </div>
+              </ng-container>
+              <ng-container *ngSwitchCase="EstadoPagoPedido.PAGO_REALIZADO">
+                <button class="action-btn accept" (click)="aceptarPedido(pedido)">
+                  <i class="material-icons">check_circle</i>
+                  Aceptar Pedido
+                </button>
+              </ng-container>
+            </ng-container>
             <button class="action-btn cancel" (click)="changeStatus(pedido, 'CANCELADO')">Cancelar</button>
           </ng-container>
 
@@ -52,11 +74,17 @@
           </ng-container>
 
           <ng-container *ngSwitchCase="'ENTREGADO'">
-            <p class="status-message delivered">Este pedido ha sido entregado</p>
+            <p class="status-message delivered">
+              <i class="material-icons">done_all</i>
+              Este pedido ha sido entregado
+            </p>
           </ng-container>
 
           <ng-container *ngSwitchCase="'CANCELADO'">
-            <p class="status-message cancelled">Este pedido ha sido cancelado</p>
+            <p class="status-message cancelled">
+              <i class="material-icons">cancel</i>
+              Este pedido ha sido cancelado
+            </p>
           </ng-container>
         </ng-container>
       </div>

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MenuService, MenuItem } from '../../services/menu.service';
@@ -11,7 +11,7 @@ import { PedidoService, Pedido, PedidoItem, EstadoPedido } from '../../services/
   templateUrl: './realizar-pedido.component.html',
   styleUrls: ['./realizar-pedido.component.scss']
 })
-export class RealizarPedidoComponent {
+export class RealizarPedidoComponent implements OnInit {
   @Input() clienteId: string = '';
   @Output() pedidoCreado = new EventEmitter<Pedido>();
   @Output() cerrarModal = new EventEmitter<void>();
@@ -60,16 +60,17 @@ export class RealizarPedidoComponent {
   // Cerrar el modal de realizar pedido
   cerrar() {
     this.cerrarModal.emit();
-  }
-
-  // Cargar los elementos del menú
-  loadMenuItems() {
+  }  // Cargar los elementos del menú
+  loadMenuItems(): void {
+    console.log('🍽️ Iniciando carga de menús...');
     this.menuService.getAllMenus().subscribe({
       next: (menus) => {
-        this.menuItems = menus.flatMap(menu => menu.items);
+        console.log('📋 Menús crudos recibidos:', JSON.stringify(menus, null, 2));
+        this.menuItems = menus.flatMap(menu => menu.items || []);
+        console.log('✅ Ítems disponibles para pedido:', this.menuItems.length);
       },
       error: (err) => {
-        console.error('Error al cargar los menús', err);
+        console.error('💥 Error al cargar los menús:', err);
       }
     });
   }
@@ -88,9 +89,15 @@ export class RealizarPedidoComponent {
   getItemsByCategory(category: string): MenuItem[] {
     return this.menuItems.filter(item => item.categoria === category);
   }
-
   // Añadir un elemento al pedido
   addToOrder(menuItem: MenuItem) {
+    // Verificar que el ítem tenga un precio válido
+    if (!menuItem.precio || menuItem.precio <= 0) {
+      console.error(`No se puede añadir "${menuItem.nombre}" al pedido: precio inválido (${menuItem.precio})`);
+      // Puedes mostrar un mensaje al usuario aquí
+      return;
+    }
+
     const existingItemIndex = this.currentPedido.items.findIndex(
       item => item.nombre === menuItem.nombre
     );
@@ -105,7 +112,7 @@ export class RealizarPedidoComponent {
         descripcion: menuItem.descripcion,
         categoria: menuItem.categoria,
         cantidad: 1,
-        precio: menuItem.precio || 0
+        precio: menuItem.precio // Ya validamos que existe y es > 0
       };
       this.currentPedido.items.push(pedidoItem);
     }

@@ -1,13 +1,105 @@
 :host {
   display: block;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--background-dark);
   min-height: 100vh;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Sistema de Notificaciones Elegante */
+.notificacion-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 400px;
+  min-width: 350px;
+  animation: slide-in 0.3s ease-out forwards;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  border-radius: 10px;
+  overflow: hidden;
+
+  &.exito {
+    background: linear-gradient(to right, #1e8449, #27ae60);
+    border-left: 5px solid #145a32;
+  }
+
+  &.error {
+    background: linear-gradient(to right, #922b21, #e74c3c);
+    border-left: 5px solid #641e16;
+  }
+
+  &.info {
+    background: linear-gradient(to right, #2471a3, #3498db);
+    border-left: 5px solid #1a5276;
+  }
+
+  .notificacion-contenido {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+
+    .notificacion-icono {
+      font-size: 24px;
+      margin-right: 14px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .notificacion-texto {
+      flex: 1;
+
+      h3 {
+        margin: 0 0 5px;
+        color: #fff;
+        font-weight: 600;
+        font-size: 18px;
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+      }
+
+      p {
+        margin: 0;
+        color: rgba(255,255,255,0.9);
+        font-size: 14px;
+      }
+    }
+
+    .notificacion-cerrar {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      transition: background-color 0.3s;
+
+      &:hover {
+        background-color: rgba(255,255,255,0.1);
+      }
+    }
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 h2 {
@@ -55,10 +147,9 @@ h2 {
 }
 
 .filter-btn {
-  padding: 8px 16px;
-  border: 2px solid var(--border-color);
-  background: white;
-  color: var(--text-secondary);
+  padding: 8px 16px;  border: 2px solid var(--primary-color);
+  background: var(--background-dark);
+  color: var(--text-light);
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -86,10 +177,10 @@ h2 {
 }
 
 .opcion-card {
-  background: white;
+  background: var(--background-medium);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
   border: 2px solid transparent;
 
@@ -100,12 +191,12 @@ h2 {
 
   &.disabled {
     opacity: 0.5;
-    background: #f5f5f5;
+    background: var(--background-dark);
     cursor: not-allowed;
 
     &:hover {
       transform: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
   }
 }
@@ -154,7 +245,7 @@ h2 {
   width: 32px;
   height: 32px;
   border: 2px solid var(--primary-color);
-  background: white;
+  background: var(--background-medium);
   color: var(--primary-color);
   border-radius: 50%;
   cursor: pointer;
@@ -182,11 +273,12 @@ h2 {
 }
 
 .carrito-section {
-  background: white;
+  background: var(--background-medium);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,204,41,0.2);
 }
 
 .carrito-item {
@@ -233,9 +325,10 @@ h2 {
 .carrito-total {
   text-align: center;
   padding: 20px;
-  background: white;
+  background: var(--background-dark);
   border-radius: 8px;
   margin-bottom: 20px;
+  border: 1px solid rgba(255,204,41,0.2);
 }
 
 .micropedido-form {
@@ -257,13 +350,16 @@ h2 {
 .form-group input,
 .form-group textarea {
   padding: 12px;
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--primary-color);
   border-radius: 8px;
   font-size: 1rem;
+  background-color: var(--background-dark);
+  color: var(--text-light);
 
   &:focus {
     border-color: var(--primary-color);
     outline: none;
+    box-shadow: 0 0 5px rgba(255, 204, 41, 0.5);
   }
 }
 
@@ -311,11 +407,11 @@ h2 {
 }
 
 .micropedido-card {
-  background: white;
+  background: var(--background-medium);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border-left: 4px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border-left: 4px solid #555;
 
   &.estado-pendiente {
     border-left-color: var(--warning-color);
@@ -356,8 +452,9 @@ h2 {
   font-size: 0.8rem;
   font-weight: bold;
   text-transform: uppercase;
-  background: #f8f9fa;
-  color: var(--text-secondary);
+  background: var(--background-dark);
+  color: var(--text-light);
+  border: 1px solid rgba(255,204,41,0.3);
 }
 
 .micropedido-detalles {
@@ -370,8 +467,9 @@ h2 {
   gap: 10px;
   margin-bottom: 15px;
   padding: 15px;
-  background: #f8f9fa;
+  background: var(--background-dark);
   border-radius: 8px;
+  border: 1px solid rgba(255,204,41,0.2);
 }
 
 .meta-item {
@@ -401,8 +499,9 @@ h2 {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: var(--background-dark);
   border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .item-info {

@@ -50,6 +50,17 @@
             <button class="add-button" (click)="addToOrder(item)">Añadir</button>
           </div>
         </div>
+
+        <div *ngIf="menuItems.length > 0; else noItems">
+          <div class="opcion-card" *ngFor="let item of menuItems">
+            <h4>{{ item.nombre }} - ${{ item.precio }}</h4>
+            <p>{{ item.descripcion }}</p>
+            <button (click)="addToOrder(item)">Agregar</button>
+          </div>
+        </div>
+        <ng-template #noItems>
+          <p>No hay ítems disponibles para realizar pedido.</p>
+        </ng-template>
       </div>
     </div>
 

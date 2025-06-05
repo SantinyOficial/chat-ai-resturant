@@ -12,7 +12,7 @@ import { MicropedidoService, Micropedido, OpcionMicropedido, TipoMicropedido, Es
 })
 export class MicropedidosComponent implements OnInit {
   activeTab: string = 'crear';
-  
+
   // Crear micropedido
   opciones: OpcionMicropedido[] = [];
   opcionesFiltradas: OpcionMicropedido[] = [];
@@ -23,15 +23,22 @@ export class MicropedidosComponent implements OnInit {
   procesando: boolean = false;
   loadingOpciones: boolean = false;
   tiempoEstimadoTotal: number = 0;
-  
+
   // Mis micropedidos
   misMicropedidos: Micropedido[] = [];
   micropedidosFiltrados: Micropedido[] = [];
   filtroEstado: EstadoMicropedido | null = null;
   loadingMicropedidos: boolean = false;
-  
+
+  // Sistema de notificaciones
+  notificacionVisible: boolean = false;
+  notificacionTitulo: string = '';
+  notificacionMensaje: string = '';
+  notificacionTipo: 'exito' | 'error' | 'info' = 'info';
+  timeoutNotificacion: any;
+
   clienteId: string = 'cliente-actual'; // Esto vendría del servicio de autenticación
-  
+
   constructor(private micropedidoService: MicropedidoService) {}
 
   ngOnInit() {
@@ -64,7 +71,7 @@ export class MicropedidosComponent implements OnInit {
 
   agregarItem(opcion: OpcionMicropedido) {
     const itemExistente = this.itemsCarrito.find(item => item.nombre === opcion.nombre && item.tipo === opcion.tipo);
-    
+
     if (itemExistente) {
       itemExistente.cantidad++;
     } else {
@@ -77,18 +84,18 @@ export class MicropedidosComponent implements OnInit {
       };
       this.itemsCarrito.push(nuevoItem);
     }
-    
+
     this.calcularTiempoEstimado();
   }
 
   cambiarCantidad(index: number, cambio: number) {
     const item = this.itemsCarrito[index];
     item.cantidad += cambio;
-    
+
     if (item.cantidad <= 0) {
       this.itemsCarrito.splice(index, 1);
     }
-    
+
     this.calcularTiempoEstimado();
   }
 
@@ -130,7 +137,7 @@ export class MicropedidosComponent implements OnInit {
     }
 
     this.procesando = true;
-    
+
     const micropedido: Micropedido = {
       clienteId: this.clienteId,
       mesa: this.mesa,
@@ -144,25 +151,34 @@ export class MicropedidosComponent implements OnInit {
     this.micropedidoService.crearMicropedido(micropedido).subscribe({
       next: (resultado) => {
         console.log('Micropedido creado:', resultado);
-        
+
         // Limpiar formulario
         this.itemsCarrito = [];
         this.mesa = 0;
         this.observaciones = '';
         this.tiempoEstimadoTotal = 0;
-        
+
         // Cambiar a la pestaña de mis micropedidos
         this.activeTab = 'mis-micropedidos';
         this.loadMisMicropedidos();
-        
+
         this.procesando = false;
-        
-        alert('¡Micropedido creado exitosamente!');
+
+        // Mostrar notificación elegante de éxito
+        this.mostrarNotificacionExito(
+          '¡Micropedido Creado!',
+          `Tu pedido para la mesa ${this.mesa} está siendo preparado.`
+        );
       },
       error: (err) => {
         console.error('Error al crear micropedido:', err);
         this.procesando = false;
-        alert('Error al crear el micropedido. Por favor intenta nuevamente.');
+
+        // Mostrar notificación elegante de error
+        this.mostrarNotificacionError(
+          'No se pudo crear el micropedido',
+          'Por favor intenta nuevamente o contacta al mesero.'
+        );
       }
     });
   }
@@ -171,7 +187,7 @@ export class MicropedidosComponent implements OnInit {
     this.loadingMicropedidos = true;
     this.micropedidoService.getMicropedidosByCliente(this.clienteId).subscribe({
       next: (micropedidos) => {
-        this.misMicropedidos = micropedidos.sort((a, b) => 
+        this.misMicropedidos = micropedidos.sort((a, b) =>
           new Date(b.fechaCreacion || '').getTime() - new Date(a.fechaCreacion || '').getTime()
         );
         this.filtrarPorEstado(this.filtroEstado);
@@ -247,14 +263,41 @@ export class MicropedidosComponent implements OnInit {
         next: (resultado) => {
           console.log('Micropedido cancelado:', resultado);
           this.loadMisMicropedidos();
-          alert('Micropedido cancelado exitosamente.');
+          this.mostrarNotificacionExito('Pedido cancelado', 'El micropedido se ha cancelado correctamente.');
         },
         error: (err) => {
           console.error('Error al cancelar micropedido:', err);
-          alert('Error al cancelar el micropedido.');
+          this.mostrarNotificacionError('Error', 'No se pudo cancelar el micropedido en este momento.');
         }
       });
     }
+  }
+
+  // Métodos de notificación elegante para la demo
+  mostrarNotificacionExito(titulo: string, mensaje: string): void {
+    this.mostrarNotificacion(titulo, mensaje, 'exito');
+  }
+
+  mostrarNotificacionError(titulo: string, mensaje: string): void {
+    this.mostrarNotificacion(titulo, mensaje, 'error');
+  }
+
+  mostrarNotificacion(titulo: string, mensaje: string, tipo: 'exito' | 'error' | 'info'): void {
+    // Limpiar cualquier notificación previa
+    if (this.timeoutNotificacion) {
+      clearTimeout(this.timeoutNotificacion);
+    }
+
+    // Configurar la nueva notificación
+    this.notificacionTitulo = titulo;
+    this.notificacionMensaje = mensaje;
+    this.notificacionTipo = tipo;
+    this.notificacionVisible = true;
+
+    // Auto-ocultar después de 4 segundos
+    this.timeoutNotificacion = setTimeout(() => {
+      this.notificacionVisible = false;
+    }, 4000);
   }
 
   // Métodos auxiliares para el template

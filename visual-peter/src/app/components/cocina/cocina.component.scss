@@ -20,13 +20,14 @@ h2 {
 }
 
 .stat-card {
-  background: white;
+  background: var(--background-medium);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   gap: 15px;
+  border: 1px solid rgba(255, 204, 41, 0.2);
 }
 
 .stat-card .material-icons {
@@ -99,10 +100,10 @@ h2 {
 }
 
 .pedido-card {
-  background: white;
+  background: var(--background-medium);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   border-left: 4px solid var(--border-color);
 }
 
@@ -130,9 +131,9 @@ h2 {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  0% { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
   50% { box-shadow: 0 4px 20px rgba(220, 53, 69, 0.3); }
-  100% { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  100% { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 }
 
 .pedido-header {
@@ -170,7 +171,7 @@ h2 {
 }
 
 .tiempo-transcurrido, .tiempo-espera {
-  background: var(--background-light);
+  background: var(--background-dark);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -212,7 +213,7 @@ h2 {
 }
 
 .estado-recibido {
-  background: var(--background-light);
+  background: var(--background-dark);
   color: var(--text-secondary);
 }
 
@@ -250,7 +251,7 @@ h2 {
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: var(--background-light);
+  background: var(--background-dark);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 5px;
@@ -268,7 +269,7 @@ h2 {
 }
 
 .pedido-observaciones {
-  background: var(--background-light);
+  background: var(--background-dark);
   padding: 10px;
   border-radius: 8px;
   margin-bottom: 15px;
@@ -347,16 +348,16 @@ h2 {
 }
 
 .cocinero-card {
-  background: white;
+  background: var(--background-medium);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   text-align: center;
 }
 
 .cocinero-card.no-disponible {
   opacity: 0.7;
-  background: #f5f5f5;
+  background: var(--background-dark);
 }
 
 .cocinero-avatar {
@@ -440,11 +441,11 @@ h2 {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: white;
+  background: var(--background-medium);
   border-radius: 20px;
   padding: 15px 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border: 2px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  border: 2px solid rgba(255, 204, 41, 0.3);
   transition: all 0.3s ease;
   min-width: 280px;
 
@@ -482,7 +483,7 @@ h2 {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: #e0e0e0;
+  background: var(--background-dark);
   color: white;
   flex-shrink: 0;
   transition: all 0.3s ease;

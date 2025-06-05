@@ -214,11 +214,10 @@ h2 {
   justify-content: center;
   gap: 5px;
   height: 20px;
-
   span {
     width: 8px;
     height: 8px;
-    background: #fff;
+    background: var(--primary-color);
     border-radius: 50%;
     display: inline-block;
     animation: bounce 1s infinite ease-in-out;
@@ -238,11 +237,11 @@ h2 {
 }
 
 @keyframes bounce {
-  0%, 60%, 100% { 
-    transform: translateY(0); 
+  0%, 60%, 100% {
+    transform: translateY(0);
   }
-  30% { 
-    transform: translateY(-6px); 
+  30% {
+    transform: translateY(-6px);
   }
 }
 

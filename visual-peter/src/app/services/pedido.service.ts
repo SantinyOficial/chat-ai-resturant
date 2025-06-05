@@ -63,8 +63,26 @@ export class PedidoService {
   getPedidosByMesa(mesa: number): Observable<Pedido[]> {
     return this.http.get<Pedido[]>(`${this.apiUrl}/mesa/${mesa}`);
   }
-
   crearPedido(pedido: Pedido): Observable<Pedido> {
+    // Validar que todos los ítems del pedido tengan precios válidos
+    const itemsSinPrecio = pedido.items.filter(item => !item.precio || item.precio <= 0);
+
+    if (itemsSinPrecio.length > 0) {
+      console.error('El pedido contiene ítems sin precio válido:',
+        itemsSinPrecio.map(item => item.nombre).join(', '));
+
+      // Eliminar ítems sin precio válido
+      pedido.items = pedido.items.filter(item => item.precio > 0);
+
+      // Recalcular el total
+      pedido.total = pedido.items.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    }
+
+    // Si no quedan ítems, mostrar error
+    if (pedido.items.length === 0) {
+      throw new Error('No se puede crear un pedido sin ítems con precios válidos');
+    }
+
     return this.http.post<Pedido>(this.apiUrl, pedido);
   }
 

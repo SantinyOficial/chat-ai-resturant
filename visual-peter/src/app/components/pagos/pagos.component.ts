@@ -224,13 +224,11 @@ export class PagosComponent implements OnInit {
     };
     this.limpiarDatosMetodo();
   }
-
   // Cargar historial de pagos
   cargarPagos() {
     this.loadingPagos = true;
-    // Como no sabemos el clienteId, usaremos getPagosByPedido con un ID genérico
-    // o implementaremos un método genérico para obtener todos los pagos
-    this.pagoService.getHistorialPagos('all').subscribe({
+    // Usar el método de simulación para MVP
+    this.pagoService.getHistorialPagosSimulados().subscribe({
       next: (pagos: Pago[]) => {
         this.pagos = pagos;
         this.filtrarPagos();
@@ -239,6 +237,9 @@ export class PagosComponent implements OnInit {
       error: (error: any) => {
         console.error('Error al cargar pagos:', error);
         this.loadingPagos = false;
+        // En caso de error, inicializamos con un array vacío
+        this.pagos = [];
+        this.pagosFiltrados = [];
       }
     });
   }

@@ -173,12 +173,12 @@
     .action-btn:hover {
       transform: scale(1.05);
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .botones-accion {
+    }    .botones-accion {
       display: flex;
       justify-content: center;
       margin-top: 30px;
+      gap: 15px;
+      flex-wrap: wrap;
     }
 
     .btn-crear {
@@ -194,11 +194,36 @@
       font-size: 1.1rem;
       cursor: pointer;
       transition: all 0.3s ease;
-    }
-
-    .btn-crear:hover {
+    }    .btn-crear:hover {
       transform: scale(1.05);
       box-shadow: 0 0 15px rgba(255, 204, 41, 0.6);
+    }
+
+    .btn-predeterminados {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-predeterminados:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(33, 150, 243, 0.6);
+    }
+
+    .btn-predeterminados:disabled {
+      background: #7c7c7c;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .modal {
@@ -361,4 +386,4 @@
         grid-template-columns: 1fr;
       }
     }
-  
+

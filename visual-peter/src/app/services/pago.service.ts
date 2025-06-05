@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export enum MetodoPago {
@@ -19,6 +19,27 @@ export enum EstadoPago {
   RECHAZADO = 'RECHAZADO',
   CANCELADO = 'CANCELADO',
   REEMBOLSADO = 'REEMBOLSADO'
+}
+
+// Nuevo enum para el estado de pago del pedido
+export enum EstadoPagoPedido {
+  PENDIENTE_PAGO = 'PENDIENTE_PAGO',
+  PROCESANDO_PAGO = 'PROCESANDO_PAGO',
+  PAGO_REALIZADO = 'PAGO_REALIZADO',
+  PAGO_FALLIDO = 'PAGO_FALLIDO'
+}
+
+// Interface para pedidos con estado de pago
+export interface PedidoConPago {
+  id: string;
+  mesa: number;
+  items: any[];
+  total: number;
+  estado: string;
+  estadoPago: EstadoPagoPedido;
+  fechaCreacion: Date;
+  clienteId: string;
+  pagoId?: string;
 }
 
 export interface DatosTarjeta {
@@ -58,7 +79,7 @@ export interface Pago {
   descripcion?: string;
   observaciones?: string;
   codigoTransaccion?: string;
-  
+
   // Datos específicos del método de pago
   numeroTarjeta?: string;
   nombreTarjeta?: string;
@@ -72,7 +93,7 @@ export interface Pago {
   emailPSE?: string;
   telefonoDaviplata?: string;
   pinDaviplata?: string;
-  
+
   // Información adicional
   comisionBanco?: number;
   montoTotal?: number;
@@ -115,6 +136,161 @@ export class PagoService {
   private apiUrl = '/api/pagos';
 
   constructor(private http: HttpClient) {}
+
+  // Subject para notificar cambios de estado de pago
+  private estadoPagoChanged = new Subject<{pedidoId: string, estadoPago: EstadoPagoPedido}>();
+  public estadoPagoChanged$ = this.estadoPagoChanged.asObservable();
+
+  // ===== MÉTODOS PARA MVP - SIMULACIÓN DE PAGOS =====
+  // Simular procesamiento de pago para MVP
+  simularPagoPedido(pedidoId: string, monto: number, metodoPago: MetodoPago): Observable<ResultadoPago> {
+    return new Observable(observer => {
+      console.log(`🔄 Iniciando simulación de pago para pedido ${pedidoId} - Monto: $${monto} - Método: ${metodoPago}`);
+
+      // Actualizar estado a procesando INMEDIATAMENTE
+      this.actualizarEstadoPagoPedido(pedidoId, EstadoPagoPedido.PROCESANDO_PAGO);
+
+      // Simular delay de procesamiento realista con feedback
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += 10;
+        console.log(`📊 Progreso del pago: ${progress}%`);
+
+        if (progress >= 100) {
+          clearInterval(progressInterval);
+
+          // 95% de éxito para demo (solo 5% de fallos)
+          const exitoso = Math.random() > 0.05;
+
+          if (exitoso) {
+            const pagoSimulado: Pago = {
+              id: 'PAG-' + Date.now(),
+              pedidoId: pedidoId,
+              clienteId: 'MVP-CLIENT',
+              monto: monto,
+              metodoPago: metodoPago,
+              estado: EstadoPago.APROBADO,
+              fechaCreacion: new Date().toISOString(),
+              fechaProcesamiento: new Date().toISOString(),
+              descripcion: `Pago simulado - ${this.getMetodoLabel(metodoPago)}`,
+              codigoTransaccion: 'TXN-' + Math.floor(Math.random() * 1000000),
+              referenciaPago: 'REF-' + Math.floor(Math.random() * 100000)
+            };
+
+            // Guardar pago en localStorage
+            this.guardarPagoSimulado(pagoSimulado);
+
+            // Actualizar estado del pedido
+            this.actualizarEstadoPagoPedido(pedidoId, EstadoPagoPedido.PAGO_REALIZADO);
+
+            console.log('✅ Pago procesado exitosamente:', pagoSimulado);
+
+            observer.next({
+              success: true,
+              mensaje: 'Pago procesado exitosamente',
+              pago: pagoSimulado,
+              codigoTransaccion: pagoSimulado.codigoTransaccion
+            });
+          } else {
+            console.log('❌ Pago falló en la simulación');
+
+            this.actualizarEstadoPagoPedido(pedidoId, EstadoPagoPedido.PAGO_FALLIDO);
+
+            observer.next({
+              success: false,
+              mensaje: 'El pago no pudo ser procesado. Verifique sus datos e intente nuevamente.',
+              pago: undefined
+            });
+          }
+
+          observer.complete();
+        }
+      }, 300); // Actualizar progreso cada 300ms
+    });
+  }
+
+  // Actualizar estado de pago del pedido
+  private actualizarEstadoPagoPedido(pedidoId: string, estadoPago: EstadoPagoPedido): void {
+    // Actualizar en localStorage
+    const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+    const pedidoIndex = pedidos.findIndex((p: any) => p.id === pedidoId);
+
+    if (pedidoIndex !== -1) {
+      pedidos[pedidoIndex].estadoPago = estadoPago;
+      if (estadoPago === EstadoPagoPedido.PAGO_REALIZADO) {
+        pedidos[pedidoIndex].fechaPago = new Date().toISOString();
+      }
+      localStorage.setItem('pedidos', JSON.stringify(pedidos));
+    }
+    // Notificar cambio a otros componentes siempre
+    this.estadoPagoChanged.next({ pedidoId, estadoPago });
+  }
+
+  // Guardar pago simulado en localStorage
+  private guardarPagoSimulado(pago: Pago): void {
+    const pagos = JSON.parse(localStorage.getItem('pagos_mvp') || '[]');
+    pagos.push(pago);
+    localStorage.setItem('pagos_mvp', JSON.stringify(pagos));
+  }
+
+  // Obtener historial de pagos simulados
+  getHistorialPagosSimulados(): Observable<Pago[]> {
+    return new Observable(observer => {
+      const pagos = JSON.parse(localStorage.getItem('pagos_mvp') || '[]');
+      observer.next(pagos);
+      observer.complete();
+    });
+  }
+
+  // Obtener estado de pago de un pedido
+  getEstadoPagoPedido(pedidoId: string): EstadoPagoPedido {
+    const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+    const pedido = pedidos.find((p: any) => p.id === pedidoId);
+    return pedido?.estadoPago || EstadoPagoPedido.PENDIENTE_PAGO;
+  }
+
+  // Método auxiliar para obtener label del método de pago
+  private getMetodoLabel(metodo: MetodoPago): string {
+    const labels = {
+      [MetodoPago.EFECTIVO]: 'Efectivo',
+      [MetodoPago.TARJETA_CREDITO]: 'Tarjeta de Crédito',
+      [MetodoPago.TARJETA_DEBITO]: 'Tarjeta de Débito',
+      [MetodoPago.NEQUI]: 'Nequi',
+      [MetodoPago.PSE]: 'PSE',
+      [MetodoPago.DAVIPLATA]: 'Daviplata'
+    };
+    return labels[metodo] || metodo;
+  }
+
+  // Obtener estadísticas de pagos simulados
+  getEstadisticasPagos(): Observable<any> {
+    return new Observable(observer => {
+      const pagos: Pago[] = JSON.parse(localStorage.getItem('pagos_mvp') || '[]');
+
+      const estadisticas = {
+        totalPagos: pagos.length,
+        montoTotal: pagos.reduce((total, pago) => total + pago.monto, 0),
+        pagosAprobados: pagos.filter(p => p.estado === EstadoPago.APROBADO).length,
+        pagosRechazados: pagos.filter(p => p.estado === EstadoPago.RECHAZADO).length,
+        tasaExito: pagos.length > 0 ? Math.round((pagos.filter(p => p.estado === EstadoPago.APROBADO).length / pagos.length) * 100) : 0,
+        metodosPorUso: this.calcularMetodosPorUso(pagos)
+      };
+
+      observer.next(estadisticas);
+      observer.complete();
+    });
+  }
+
+  private calcularMetodosPorUso(pagos: Pago[]) {
+    const metodoCount = new Map<MetodoPago, number>();
+    pagos.forEach(pago => {
+      metodoCount.set(pago.metodoPago, (metodoCount.get(pago.metodoPago) || 0) + 1);
+    });
+
+    return Array.from(metodoCount.entries())
+      .map(([metodo, cantidad]) => ({ metodo, cantidad }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+  }
 
   // Obtener métodos de pago disponibles
   getMetodosPagoDisponibles(): Observable<MetodoPagoDisponible[]> {

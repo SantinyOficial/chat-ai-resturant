@@ -260,27 +260,34 @@ export class ChatAsistenteComponent implements OnInit, OnDestroy, AfterViewCheck
         this.handleError(directErr);
       }
     });
-  }
+  }  private handleError(err: any): void {
+    // Mensajes amigables para demo
+    const demoMessages: {[key: number]: string} = {
+      0: '🔄 Conectando con el asistente... Por favor espera un momento.',
+      404: '🤖 El asistente está inicializándose. Inténtalo en unos segundos.',
+      500: '⚡ Nuestro asistente está procesando muchas consultas. Inténtalo nuevamente.',
+      503: '🔧 El asistente está en mantenimiento. Volverá pronto.'
+    };
 
-  private handleError(err: any): void {
-    let errorMsg = 'Lo siento, ha ocurrido un error al procesar tu solicitud. Por favor, intenta nuevamente.';
+    const userMessage = demoMessages[err.status] ||
+      '🎯 El asistente está disponible. ¿Puedes reformular tu pregunta?';
 
+    // Error técnico para desarrolladores (en consola)
+    console.error('🔍 Error técnico del chat:', err);
+
+    // Mensaje simple para logs internos
     if (err.status === 0) {
-      errorMsg = 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución.';
-      this.error = 'Error de conexión: No se pudo establecer comunicación con el servidor';
+      this.error = 'Conexión: Verificar backend';
     } else if (err.status === 404) {
-      errorMsg = 'El servicio de chat no está disponible en este momento. Por favor, intenta más tarde.';
-      this.error = 'Error 404: Servicio no encontrado';
+      this.error = 'Servicio: No encontrado';
     } else if (err.status === 500) {
-      errorMsg = 'El servidor encontró un error interno. Por favor, intenta más tarde.';
-      this.error = 'Error 500: Error interno del servidor';
+      this.error = 'Servidor: Error interno';
     } else {
-      this.error = `Error ${err.status}: ${err.statusText || 'Error desconocido'}`;
-    }
-
+      this.error = `Estado: ${err.status}`;
+    }    // Mensaje amigable para el usuario
     this.messages.push({
       sender: 'bot',
-      text: errorMsg,
+      text: userMessage,
       time: this.formatTime()
     });
 
