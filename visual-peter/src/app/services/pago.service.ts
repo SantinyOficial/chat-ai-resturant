@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, of, delay } from 'rxjs';
 import { environment } from '../../environments/environment';
+
+// Configuración para MVP - simular pagos exitosos
+const MVP_MODE = true;
 
 export enum MetodoPago {
   EFECTIVO = 'EFECTIVO',
@@ -208,9 +211,10 @@ export class PagoService {
       }, 300); // Actualizar progreso cada 300ms
     });
   }
+  // Actualizar estado de pago del pedido - MÉTODO PÚBLICO
+  actualizarEstadoPagoPedido(pedidoId: string, estadoPago: EstadoPagoPedido): void {
+    console.log(`🔄 PagoService.actualizarEstadoPagoPedido: ${pedidoId} -> ${estadoPago}`);
 
-  // Actualizar estado de pago del pedido
-  private actualizarEstadoPagoPedido(pedidoId: string, estadoPago: EstadoPagoPedido): void {
     // Actualizar en localStorage
     const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
     const pedidoIndex = pedidos.findIndex((p: any) => p.id === pedidoId);
@@ -221,9 +225,14 @@ export class PagoService {
         pedidos[pedidoIndex].fechaPago = new Date().toISOString();
       }
       localStorage.setItem('pedidos', JSON.stringify(pedidos));
+      console.log(`✅ Estado de pago actualizado en localStorage para pedido ${pedidoId}`);
+    } else {
+      console.warn(`⚠️ No se encontró pedido con ID ${pedidoId} para actualizar estado de pago`);
     }
+
     // Notificar cambio a otros componentes siempre
     this.estadoPagoChanged.next({ pedidoId, estadoPago });
+    console.log(`📡 Evento de cambio de estado emitido para pedido ${pedidoId}`);
   }
 
   // Guardar pago simulado en localStorage
@@ -291,9 +300,76 @@ export class PagoService {
       .map(([metodo, cantidad]) => ({ metodo, cantidad }))
       .sort((a, b) => b.cantidad - a.cantidad);
   }
-
   // Obtener métodos de pago disponibles
   getMetodosPagoDisponibles(): Observable<MetodoPagoDisponible[]> {
+    if (MVP_MODE) {
+      // Retornar métodos simulados para MVP
+      const metodosSimulados: MetodoPagoDisponible[] = [
+        {
+          metodo: MetodoPago.EFECTIVO,
+          nombre: 'Efectivo',
+          descripcion: 'Pago en efectivo al momento de la entrega',
+          comision: 0,
+          montoMinimo: 0,
+          montoMaximo: 500000,
+          disponible: true,
+          icono: '💵'
+        },
+        {
+          metodo: MetodoPago.TARJETA_CREDITO,
+          nombre: 'Tarjeta de Crédito',
+          descripcion: 'Visa, MasterCard, American Express',
+          comision: 3.5,
+          montoMinimo: 1000,
+          montoMaximo: 2000000,
+          disponible: true,
+          icono: '💳'
+        },
+        {
+          metodo: MetodoPago.TARJETA_DEBITO,
+          nombre: 'Tarjeta de Débito',
+          descripcion: 'Débito directo desde cuenta bancaria',
+          comision: 2.0,
+          montoMinimo: 1000,
+          montoMaximo: 1000000,
+          disponible: true,
+          icono: '💳'
+        },
+        {
+          metodo: MetodoPago.NEQUI,
+          nombre: 'Nequi',
+          descripcion: 'Pago móvil rápido y seguro',
+          comision: 1.5,
+          montoMinimo: 500,
+          montoMaximo: 3000000,
+          disponible: true,
+          icono: '📱'
+        },
+        {
+          metodo: MetodoPago.PSE,
+          nombre: 'PSE',
+          descripcion: 'Débito bancario directo PSE',
+          comision: 2.5,
+          montoMinimo: 2000,
+          montoMaximo: 5000000,
+          disponible: true,
+          icono: '🏦'
+        },
+        {
+          metodo: MetodoPago.DAVIPLATA,
+          nombre: 'Daviplata',
+          descripcion: 'Monedero digital Davivienda',
+          comision: 1.8,
+          montoMinimo: 1000,
+          montoMaximo: 2000000,
+          disponible: true,
+          icono: '💰'
+        }
+      ];
+
+      return of(metodosSimulados);
+    }
+
     return this.http.get<MetodoPagoDisponible[]>(`${this.apiUrl}/metodos-disponibles`);
   }
 
@@ -301,9 +377,13 @@ export class PagoService {
   procesarPago(pago: Pago): Observable<ResultadoPago> {
     return this.http.post<ResultadoPago>(`${this.apiUrl}/procesar`, pago);
   }
-
   // Procesar pago con tarjeta
   procesarPagoTarjeta(pedidoId: string, monto: number, datosTarjeta: DatosTarjeta): Observable<ResultadoPago> {
+    if (MVP_MODE) {
+      const metodoPago = datosTarjeta.numeroTarjeta.startsWith('4') ? MetodoPago.TARJETA_CREDITO : MetodoPago.TARJETA_DEBITO;
+      return this.simularPagoPedido(pedidoId, monto, metodoPago);
+    }
+
     const pago: Partial<Pago> = {
       pedidoId,
       monto,
@@ -316,9 +396,12 @@ export class PagoService {
     };
     return this.http.post<ResultadoPago>(`${this.apiUrl}/procesar-tarjeta`, pago);
   }
-
   // Procesar pago con Nequi
   procesarPagoNequi(pedidoId: string, monto: number, datosNequi: DatosNequi): Observable<ResultadoPago> {
+    if (MVP_MODE) {
+      return this.simularPagoPedido(pedidoId, monto, MetodoPago.NEQUI);
+    }
+
     const pago: Partial<Pago> = {
       pedidoId,
       monto,
@@ -327,9 +410,12 @@ export class PagoService {
     };
     return this.http.post<ResultadoPago>(`${this.apiUrl}/procesar-nequi`, pago);
   }
-
   // Procesar pago con PSE
   procesarPagoPSE(pedidoId: string, monto: number, datosPSE: DatosPSE): Observable<ResultadoPago> {
+    if (MVP_MODE) {
+      return this.simularPagoPedido(pedidoId, monto, MetodoPago.PSE);
+    }
+
     const pago: Partial<Pago> = {
       pedidoId,
       monto,
@@ -341,9 +427,12 @@ export class PagoService {
     };
     return this.http.post<ResultadoPago>(`${this.apiUrl}/procesar-pse`, pago);
   }
-
   // Procesar pago con Daviplata
   procesarPagoDaviplata(pedidoId: string, monto: number, datosDaviplata: DatosDaviplata): Observable<ResultadoPago> {
+    if (MVP_MODE) {
+      return this.simularPagoPedido(pedidoId, monto, MetodoPago.DAVIPLATA);
+    }
+
     const pago: Partial<Pago> = {
       pedidoId,
       monto,
@@ -353,9 +442,12 @@ export class PagoService {
     };
     return this.http.post<ResultadoPago>(`${this.apiUrl}/procesar-daviplata`, pago);
   }
-
   // Procesar pago en efectivo
   procesarPagoEfectivo(pedidoId: string, monto: number, observaciones?: string): Observable<ResultadoPago> {
+    if (MVP_MODE) {
+      return this.simularPagoPedido(pedidoId, monto, MetodoPago.EFECTIVO);
+    }
+
     const pago: Partial<Pago> = {
       pedidoId,
       monto,

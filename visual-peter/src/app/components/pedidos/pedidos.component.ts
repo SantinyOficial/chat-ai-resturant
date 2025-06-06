@@ -1,10 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.service';
-import { PagoService, EstadoPagoPedido } from '../../services/pago.service';
+import { PedidoService, Pedido } from '../../services/pedido.service';
+import { PagoService } from '../../services/pago.service';
+import { EstadoPagoPedido, EstadoPedido } from '../../models/enums';
 import { PagoClienteComponent } from '../pago-cliente/pago-cliente.component';
 import { EstadoSincronizacionService, EstadoSincronizado } from '../../services/estado-sincronizacion.service';
+import { Inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -34,7 +36,7 @@ export class PedidosComponent implements OnInit, OnDestroy {
   constructor(
     private pedidoService: PedidoService,
     private pagoService: PagoService,
-    private estadoSincronizacionService: EstadoSincronizacionService
+    @Inject(EstadoSincronizacionService) private estadoSincronizacionService: EstadoSincronizacionService
   ) {
     // Guardar el ID del cliente en localStorage si no existe
     if (!localStorage.getItem('clienteId')) {
@@ -48,28 +50,28 @@ export class PedidosComponent implements OnInit, OnDestroy {
     // Actualizar pedidos cada 30 segundos
     this.pedidosInterval = setInterval(() => {
       this.loadUserPedidos();
-    }, 30000);
+    }, 30000);    // Suscribirse a cambios de estado centralizados
+    this.estadosSubscription = this.estadoSincronizacionService.cambios$.subscribe(estados => {
+      // Procesar cada estado en el array
+      estados.forEach(cambio => {
+        if (cambio) {
+          console.log('🔄 Cambio de estado recibido en pedidos (meseros):', cambio);
 
-    // Suscribirse a cambios de estado centralizados
-    this.estadosSubscription = this.estadoSincronizacionService.cambios$.subscribe(cambio => {
-      if (cambio) {
-        console.log('🔄 Cambio de estado recibido en pedidos (meseros):', cambio);
+          // Actualizar estados locales
+          this.estadosSincronizados[cambio.pedidoId] = cambio;
+          this.estadosPago[cambio.pedidoId] = cambio.estadoPago;
 
-        // Actualizar estados locales
-        this.estadosSincronizados[cambio.pedidoId] = cambio;
-        this.estadosPago[cambio.pedidoId] = cambio.estadoPago;
-
-        // Actualizar el pedido correspondiente si existe en la lista
-        const pedidoIndex = this.misPedidos.findIndex(p => p.id === cambio.pedidoId);
-        if (pedidoIndex !== -1) {
-          this.misPedidos[pedidoIndex].estado = cambio.estadoPedido;
-          console.log(`✅ Pedido ${cambio.pedidoId} actualizado - Estado: ${cambio.estadoPedido}, Pago: ${cambio.estadoPago}`);
+          // Actualizar el pedido correspondiente si existe en la lista
+          const pedidoIndex = this.misPedidos.findIndex(p => p.id === cambio.pedidoId);
+          if (pedidoIndex !== -1) {
+            this.misPedidos[pedidoIndex].estado = cambio.estadoPedido;
+            console.log(`✅ Pedido ${cambio.pedidoId} actualizado - Estado: ${cambio.estadoPedido}, Pago: ${cambio.estadoPago}`);
+          }
         }
-      }
-    });
-
-    // Mantener también la suscripción original como respaldo
-    this.pagoService.estadoPagoChanged$.subscribe(({ pedidoId, estadoPago }) => {
+      });
+    });    // Mantener también la suscripción original como respaldo
+    this.pagoService.estadoPagoChanged$.subscribe((cambio: any) => {
+      const { pedidoId, estadoPago } = cambio;
       this.estadosPago[pedidoId] = estadoPago;
     });
   }
@@ -83,7 +85,6 @@ export class PedidosComponent implements OnInit, OnDestroy {
       this.estadosSubscription.unsubscribe();
     }
   }
-
   loadUserPedidos() {
     this.isLoading = true;
     this.pedidoService.getPedidosByCliente(this.clienteId).subscribe({
@@ -91,10 +92,20 @@ export class PedidosComponent implements OnInit, OnDestroy {
         // Guardar todos los pedidos sin filtrar
         this.misPedidos = pedidos;
 
-        // Cargar estados de pago para cada pedido
+        // Cargar estados de pago para cada pedido SOLO si no existen ya
         pedidos.forEach(pedido => {
           if (pedido.id) {
-            this.estadosPago[pedido.id] = this.pagoService.getEstadoPagoPedido(pedido.id);
+            // Solo actualizar si no tenemos ya un estado cargado o si es diferente
+            const estadoActual = this.estadosPago[pedido.id];
+            const estadoPersistente = this.pagoService.getEstadoPagoPedido(pedido.id);
+
+            // Priorizar estados más avanzados (ej: no sobrescribir PAGO_REALIZADO con PENDIENTE_PAGO)
+            if (!estadoActual || this.esEstadoMasAvanzado(estadoPersistente, estadoActual)) {
+              console.log(`🔄 Actualizando estado de pago para pedido ${pedido.id}: ${estadoActual} -> ${estadoPersistente}`);
+              this.estadosPago[pedido.id] = estadoPersistente;
+            } else {
+              console.log(`✅ Manteniendo estado existente para pedido ${pedido.id}: ${estadoActual}`);
+            }
           }
         });
 
@@ -102,6 +113,7 @@ export class PedidosComponent implements OnInit, OnDestroy {
         this.filterPedidos(this.selectedFilter);
 
         console.log(`Se cargaron ${pedidos.length} pedidos para el cliente ${this.clienteId}`);
+        console.log('Estados de pago cargados:', this.estadosPago);
 
         // Guardar nuevamente el clienteId para mantener consistencia
         localStorage.setItem('clienteId', this.clienteId);
@@ -113,6 +125,18 @@ export class PedidosComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  // Método auxiliar para determinar si un estado es más avanzado que otro
+  private esEstadoMasAvanzado(nuevoEstado: EstadoPagoPedido, estadoActual: EstadoPagoPedido): boolean {
+    const jerarquia = {
+      [EstadoPagoPedido.PENDIENTE_PAGO]: 1,
+      [EstadoPagoPedido.PROCESANDO_PAGO]: 2,
+      [EstadoPagoPedido.PAGO_FALLIDO]: 2, // Mismo nivel que procesando para permitir reintentos
+      [EstadoPagoPedido.PAGO_REALIZADO]: 3
+    };
+
+    return jerarquia[nuevoEstado] > jerarquia[estadoActual];
   }
 
   filterPedidos(filter: string) {
@@ -142,12 +166,13 @@ export class PedidosComponent implements OnInit, OnDestroy {
       return dateB.getTime() - dateA.getTime();
     });
   }
-
   getEstadoLabel(estado: EstadoPedido): string {
     const estados = {
       [EstadoPedido.PENDIENTE]: 'Pendiente',
+      [EstadoPedido.CONFIRMADO]: 'Confirmado',
       [EstadoPedido.EN_PREPARACION]: 'En Preparación',
       [EstadoPedido.LISTO]: 'Listo para Entregar',
+      [EstadoPedido.EN_CAMINO]: 'En Camino',
       [EstadoPedido.ENTREGADO]: 'Entregado',
       [EstadoPedido.CANCELADO]: 'Cancelado'
     };
@@ -175,7 +200,13 @@ export class PedidosComponent implements OnInit, OnDestroy {
 
       console.log('✅ Actualizando pedido a EN_PREPARACION...');
 
-      // Actualizar estado del pedido en backend a EN_PREPARACION
+      // Primero actualizar en el servicio de sincronización para notificar a gestión-pedidos
+      this.estadoSincronizacionService.actualizarEstadoPago(
+        event.pedidoId,
+        EstadoPagoPedido.PAGO_REALIZADO
+      );
+
+      // Luego actualizar estado del pedido en backend
       this.pedidoService.actualizarEstadoPedido(event.pedidoId, EstadoPedido.EN_PREPARACION)
         .subscribe({
           next: (pedido) => {
@@ -187,7 +218,7 @@ export class PedidosComponent implements OnInit, OnDestroy {
               this.misPedidos[pedidoIndex].estado = EstadoPedido.EN_PREPARACION;
             }
 
-            // Sincronizar con el servicio centralizado
+            // Sincronizar estado del pedido con el servicio centralizado
             this.estadoSincronizacionService.actualizarEstadoPedido(
               event.pedidoId,
               EstadoPedido.EN_PREPARACION
@@ -210,7 +241,11 @@ export class PedidosComponent implements OnInit, OnDestroy {
       // Actualizar estado de pago local
       this.estadosPago[event.pedidoId] = EstadoPagoPedido.PAGO_FALLIDO;
 
-      // Sincronizar el fallo con el servicio centralizado (ya se hace en pago-cliente.component)
+      // Sincronizar el fallo con el servicio centralizado
+      this.estadoSincronizacionService.actualizarEstadoPago(
+        event.pedidoId,
+        EstadoPagoPedido.PAGO_FALLIDO
+      );
     }
   }
 
@@ -224,10 +259,10 @@ export class PedidosComponent implements OnInit, OnDestroy {
     };
     return labels[estadoPago] || estadoPago;
   }
-
   isStepCompleted(currentEstado: EstadoPedido, stepEstado: string): boolean {
     const estados = [
       EstadoPedido.PENDIENTE,
+      EstadoPedido.CONFIRMADO,
       EstadoPedido.EN_PREPARACION,
       EstadoPedido.LISTO,
       EstadoPedido.ENTREGADO

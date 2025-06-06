@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 // Interfaces para el nuevo sistema simplificado
@@ -74,28 +74,39 @@ export class VoiceSimpleService {
       this.recognition.onstart = () => {
         console.log('🎤 Reconocimiento iniciado');
         this.actualizarEstado('escuchando');
-      };
-
-      this.recognition.onresult = (event: any) => {
+      };      this.recognition.onresult = (event: any) => {
         this.procesarResultadoVoz(event);
       };
 
       this.recognition.onerror = (event: any) => {
         console.error('❌ Error en reconocimiento:', event.error);
+
+        // No reiniciar automáticamente si ya está ejecutándose
+        if (event.error === 'already-started') {
+          console.log('🔄 Reconocimiento ya iniciado, continuando...');
+          return;
+        }
+
         this.actualizarEstado('idle');
-        this.reiniciarEscucha();
+
+        // Solo reiniciar para errores que no sean de estado
+        if (event.error !== 'aborted' && event.error !== 'not-allowed') {
+          this.reiniciarEscucha();
+        }
       };
 
       this.recognition.onend = () => {
         console.log('🔇 Reconocimiento terminado');
+
+        // Solo reiniciar si la escucha está activa y no hay errores
         if (this.escuchaActiva) {
-          this.reiniciarEscucha();
+          setTimeout(() => {
+            this.reiniciarEscucha();
+          }, 1000); // Esperar 1 segundo antes de reiniciar
         } else {
           this.actualizarEstado('idle');
         }
-      };
-
-    } catch (error) {
+      };    } catch (error: any) {
       console.error('❌ Error configurando reconocimiento:', error);
     }
   }
@@ -109,9 +120,14 @@ export class VoiceSimpleService {
       this.seleccionarVoz();
     }
   }
-
   private seleccionarVoz(): void {
     const voces = this.speechSynthesis.getVoices();
+    console.log('🎤 Voces disponibles:', voces.length);
+    
+    if (voces.length > 0) {
+      console.log('🎤 Lista de voces:', voces.map(v => `${v.name} (${v.lang})`));
+    }
+
     this.vozSeleccionada = voces.find((voz: any) =>
       voz.lang.includes('es') && voz.name.includes('Google')
     ) || voces.find((voz: any) => voz.lang.includes('es')) || voces[0];
@@ -167,14 +183,12 @@ export class VoiceSimpleService {
       tipo: 'usuario',
       fecha: new Date()
     };
-    this.agregarMensaje(mensajeUsuario);
-
-    try {
+    this.agregarMensaje(mensajeUsuario);    try {
       console.log('🤖 Enviando comando a IA:', comando);
 
-      const respuesta = await this.http.post<RespuestaIA>(`${this.apiUrl}/comando-natural`, {
+      const respuesta = await firstValueFrom(this.http.post<RespuestaIA>(`${this.apiUrl}/comando-natural`, {
         comando: comando
-      }).toPromise();
+      }));
 
       if (respuesta?.success && respuesta.mensaje) {
         // Agregar respuesta de la IA
@@ -191,9 +205,7 @@ export class VoiceSimpleService {
         console.log('✅ Comando procesado exitosamente');
       } else {
         throw new Error('Respuesta inválida del servidor');
-      }
-
-    } catch (error) {
+      }    } catch (error: any) {
       console.error('❌ Error procesando comando:', error);
 
       const mensajeError: MensajeChat = {
@@ -215,36 +227,51 @@ export class VoiceSimpleService {
   }
 
   // ========== SÍNTESIS DE VOZ ==========
-
   public async hablar(texto: string): Promise<void> {
     if (!texto || !window.speechSynthesis) {
+      console.warn('⚠️ No se puede hablar: texto vacío o speechSynthesis no disponible');
       return;
     }
 
+    console.log('🔊 Iniciando síntesis de voz:', texto);
     this.actualizarEstado('hablando');
 
+    // Cancelar cualquier síntesis en curso
+    this.speechSynthesis.cancel();
+
     return new Promise((resolve) => {
-      const utterance = new SpeechSynthesisUtterance(texto);
+      // Pequeño delay para asegurar que la cancelación se procese
+      setTimeout(() => {
+        const utterance = new SpeechSynthesisUtterance(texto);
 
-      if (this.vozSeleccionada) {
-        utterance.voice = this.vozSeleccionada;
-      }
+        if (this.vozSeleccionada) {
+          utterance.voice = this.vozSeleccionada;
+          console.log('🎤 Usando voz:', this.vozSeleccionada.name);
+        } else {
+          console.log('🎤 Usando voz predeterminada');
+        }
 
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 0.8;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 0.8;
 
-      utterance.onend = () => {
-        console.log('🔊 Síntesis completada');
-        resolve();
-      };
+        utterance.onstart = () => {
+          console.log('🔊 Síntesis iniciada');
+        };
 
-      utterance.onerror = (error) => {
-        console.error('❌ Error en síntesis:', error);
-        resolve();
-      };
+        utterance.onend = () => {
+          console.log('🔊 Síntesis completada');
+          resolve();
+        };
 
-      this.speechSynthesis.speak(utterance);
+        utterance.onerror = (error) => {
+          console.error('❌ Error en síntesis:', error);
+          resolve();
+        };
+
+        console.log('🎵 Enviando texto a speechSynthesis.speak()');
+        this.speechSynthesis.speak(utterance);
+      }, 100);
     });
   }
 
@@ -258,9 +285,8 @@ export class VoiceSimpleService {
     try {
       this.escuchaActiva = true;
       this.recognition.start();
-      console.log('🎤 Escucha continua iniciada');
-      return true;
-    } catch (error) {
+      console.log('🎤 Escucha continua iniciada');      return true;
+    } catch (error: any) {
       console.error('❌ Error iniciando escucha:', error);
       this.escuchaActiva = false;
       return false;
@@ -274,38 +300,69 @@ export class VoiceSimpleService {
 
     this.escuchaActiva = false;
 
-    try {
-      this.recognition.stop();
+    try {      this.recognition.stop();
       console.log('🔇 Escucha continua detenida');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error deteniendo escucha:', error);
     }
 
     this.actualizarEstado('idle');
   }
-
   private reiniciarEscucha(): void {
     if (!this.escuchaActiva) {
       return;
     }
 
+    // Verificar el estado actual del reconocimiento antes de reiniciar
+    try {
+      if (this.recognition && this.recognition.readyState === 'running') {        console.log('🔄 Reconocimiento ya en ejecución, evitando reinicio');
+        return;
+      }
+    } catch (error: any) {
+      // Continuar con el reinicio si no se puede verificar el estado
+    }
+
     setTimeout(() => {
       try {
-        if (this.escuchaActiva) {
+        if (this.escuchaActiva && this.recognition) {
+          console.log('🔄 Reiniciando reconocimiento de voz');
           this.recognition.start();
-        }
-      } catch (error) {
+        }      } catch (error: any) {
         console.warn('⚠️ Error reiniciando escucha:', error);
-        setTimeout(() => this.reiniciarEscucha(), 2000);
+
+        // Solo reintentar si no es un error de "already started"
+        if (error?.message && !error.message.includes('already started')) {
+          setTimeout(() => this.reiniciarEscucha(), 2000);
+        } else {
+          console.log('⚠️ Reconocimiento ya iniciado, cancelando reintento');
+        }
       }
     }, 500);
   }
 
   // ========== MÉTODOS PÚBLICOS ADICIONALES ==========
-
   public limpiarConversacion(): void {
     this.mensajesChat.next([]);
     console.log('🧹 Conversación limpiada');
+  }
+
+  public async probarSintesisVoz(): Promise<void> {
+    console.log('🧪 Probando síntesis de voz...');
+    await this.hablar('Hola, esta es una prueba de síntesis de voz.');
+  }
+
+  public verificarEstadoSintesis(): any {
+    const estado = {
+      speechSynthesisDisponible: !!window.speechSynthesis,
+      speaking: window.speechSynthesis?.speaking || false,
+      pending: window.speechSynthesis?.pending || false,
+      paused: window.speechSynthesis?.paused || false,
+      vocesDisponibles: window.speechSynthesis?.getVoices().length || 0,
+      vozSeleccionada: this.vozSeleccionada?.name || 'Ninguna'
+    };
+    
+    console.log('🔍 Estado de síntesis de voz:', estado);
+    return estado;
   }
 
   public get escuchaContinuaEstaActiva(): boolean {

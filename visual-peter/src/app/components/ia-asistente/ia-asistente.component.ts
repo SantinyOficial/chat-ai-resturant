@@ -18,9 +18,8 @@ export class IAAsistenteComponent implements OnInit, OnDestroy, AfterViewChecked
   mensajes: MensajeChat[] = [];
   estadoVoz: EstadoVoz = 'idle';
   mensajeTexto: string = '';
-
   // Estados de la interfaz
-  panelExpandido = true;
+  panelExpandido = false; // Inicia minimizado
   mostrarIndicadorEscucha = false;
 
   // Subscripciones

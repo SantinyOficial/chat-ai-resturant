@@ -1,68 +1,400 @@
-<div class="pago-container" [ngClass]="'estado-' + estadoPago">
-  <div class="pago-info">
-    <h3>{{ getTituloEstado() }}</h3>
-    <p class="monto">Total a pagar: <strong>${{ monto | number:'1.0-0' }}</strong></p>
+<!-- 🎨 COMPONENTE DE PAGO PROFESIONAL CON EFECTOS AVANZADOS -->
+<div class="pago-container" [ngClass]="obtenerClaseEstado()">
+
+  <!-- Canvas para efectos de partículas -->
+  <canvas #canvas class="particles-canvas" [style.display]="animacionActiva ? 'block' : 'none'"></canvas>
+
+  <!-- Fondo con efectos holográficos -->
+  <div class="holographic-background" [class.active]="animacionActiva">
+    <div class="holo-layer layer-1"></div>
+    <div class="holo-layer layer-2"></div>
+    <div class="holo-layer layer-3"></div>
   </div>
 
-  <!-- Pendiente por pagar -->
-  <div *ngIf="estadoPago === 'PENDIENTE_PAGO'" class="pago-pendiente">
-    <div class="metodos-pago">
-      <button class="metodo-btn"
-              *ngFor="let metodo of metodosDisponibles"
-              [class.selected]="metodoSeleccionado === metodo.value"
-              (click)="seleccionarMetodo(metodo.value)">
-        <i class="material-icons">{{ metodo.icon }}</i>
-        <span>{{ metodo.label }}</span>
-      </button>
-    </div>
-    <button class="btn-pagar"
-            [disabled]="!metodoSeleccionado"
-            (click)="procesarPago()">
-      <i class="material-icons">payment</i>
-      Pagar Ahora
-    </button>
-  </div>
-  <!-- Procesando pago -->
-  <div *ngIf="estadoPago === 'PROCESANDO_PAGO'" class="pago-procesando">
-    <div class="loading-animation">
-      <div class="spinner"></div>
-    </div>
-    <p>🔄 Procesando tu pago...</p>
-    <p class="metodo-info">💳 {{ getMetodoLabel(metodoSeleccionado) }}</p>
-    <div class="progress-text">
-      <small>⏱️ Este proceso puede tardar unos segundos...</small>
-    </div>
+  <!-- =============================================== -->
+  <!-- ESTADO: PENDIENTE DE PAGO -->
+  <!-- =============================================== -->
+  <div *ngIf="estadoPago === EstadoPagoPedido.PENDIENTE_PAGO" class="pago-pendiente">
 
-    <!-- Barra de progreso adicional -->
-    <div class="progress-bar-container">
-      <div class="progress-bar">
-        <div class="progress-fill"></div>
+    <!-- Header con información del pago -->
+    <div class="pago-header">
+      <div class="amount-display">
+        <span class="currency-symbol">$</span>
+        <span class="amount-value">{{ monto | number:'1.0-0' }}</span>
+        <span class="currency-label">COP</span>
+      </div>
+      <div class="payment-info">
+        <h2>{{ obtenerIconoEstado() }} Selecciona tu método de pago</h2>
+        <p>Procesamiento seguro y cifrado de extremo a extremo</p>
       </div>
     </div>
+
+    <!-- Grid de métodos de pago con efectos -->
+    <div class="metodos-pago-grid">
+      <div
+        *ngFor="let metodo of metodosPago"        class="metodo-card"
+        [class.selected]="metodoSeleccionado === metodo.id"
+        [class.disabled]="!metodo.activo"
+        [attr.data-metodo]="metodo.id"
+        (click)="metodo.activo && seleccionarMetodo(metodo.id)"
+      >
+        <!-- Efecto de resplandor -->
+        <div class="card-glow"></div>
+
+        <!-- Contenido del método -->
+        <div class="metodo-content">
+          <div class="metodo-icon">{{ metodo.icono }}</div>
+          <div class="metodo-info">
+            <h3>{{ metodo.nombre }}</h3>
+            <p>{{ metodo.descripcion }}</p>
+          </div>
+          <div class="metodo-indicator">
+            <div class="radio-custom" [class.checked]="metodoSeleccionado === metodo.id">
+              <div class="radio-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Efectos de selección -->
+        <div class="selection-effects">
+          <div class="ripple-effect"></div>
+          <div class="pulse-ring"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario dinámico para datos específicos -->
+    <div *ngIf="mostrarFormulario" class="formulario-datos" [@slideInUp]>
+
+      <!-- Formulario para Tarjeta -->
+      <div *ngIf="metodoSeleccionado === 'tarjeta'" class="form-tarjeta">
+        <h3>💳 Datos de la Tarjeta</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Número de Tarjeta</label>
+            <input
+              type="text"
+              [(ngModel)]="datosPago.numeroTarjeta"
+              placeholder="**** **** **** ****"
+              maxlength="19"
+              class="input-card-number"
+            >
+            <div class="input-underline"></div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label>CVV</label>
+              <input
+                type="text"
+                [(ngModel)]="datosPago.cvv"
+                placeholder="***"
+                maxlength="4"
+              >
+              <div class="input-underline"></div>
+            </div>            <div class="input-group">
+              <label>MM/AA</label>
+              <input
+                type="text"
+                [(ngModel)]="datosPago.fechaExpiracion"
+                placeholder="MM/AA"
+                maxlength="5"
+              >
+              <div class="input-underline"></div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Nombre del Titular</label>
+            <input
+              type="text"
+              [(ngModel)]="datosPago.nombreTitular"
+              placeholder="Nombre completo"
+              style="text-transform: uppercase"
+            >
+            <div class="input-underline"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario para Nequi -->
+      <div *ngIf="metodoSeleccionado === 'nequi'" class="form-nequi">
+        <h3>📱 Datos de Nequi</h3>
+        <div class="input-group">
+          <label>Número de Celular</label>
+          <input
+            type="tel"
+            [(ngModel)]="datosPago.telefono"
+            placeholder="3XX XXX XXXX"
+            maxlength="10"
+          >
+          <div class="input-underline"></div>
+        </div>
+      </div>
+
+      <!-- Formulario para PSE -->
+      <div *ngIf="metodoSeleccionado === 'pse'" class="form-pse">
+        <h3>🏦 Datos de PSE</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Banco</label>
+            <select [(ngModel)]="datosPago.banco">
+              <option value="">Seleccionar banco</option>
+              <option value="bancolombia">Bancolombia</option>
+              <option value="davivienda">Davivienda</option>
+              <option value="bbva">BBVA</option>
+              <option value="bogota">Banco de Bogotá</option>
+            </select>
+            <div class="input-underline"></div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label>Tipo Documento</label>
+              <select [(ngModel)]="datosPago.tipoDocumento">
+                <option value="">Tipo</option>
+                <option value="CC">CC</option>
+                <option value="CE">CE</option>
+                <option value="NIT">NIT</option>
+              </select>
+              <div class="input-underline"></div>
+            </div>
+            <div class="input-group">
+              <label>Número Documento</label>
+              <input
+                type="text"
+                [(ngModel)]="datosPago.numeroDocumento"
+                placeholder="Número"
+              >
+              <div class="input-underline"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario para Daviplata -->
+      <div *ngIf="metodoSeleccionado === 'daviplata'" class="form-daviplata">
+        <h3>💰 Datos de Daviplata</h3>
+        <div class="input-group">
+          <label>Número de Celular</label>
+          <input
+            type="tel"
+            [(ngModel)]="datosPago.telefono"
+            placeholder="3XX XXX XXXX"
+            maxlength="10"
+          >
+          <div class="input-underline"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón de procesar pago -->
+    <div class="action-buttons">
+      <button
+        class="btn-procesar-pago"
+        [disabled]="!metodoSeleccionado"
+        (click)="procesarPago()"
+      >
+        <span class="btn-content">
+          <span class="btn-icon">🔒</span>
+          <span class="btn-text">Procesar Pago Seguro</span>
+          <span class="btn-amount">${{ monto | number:'1.0-0' }}</span>
+        </span>
+        <div class="btn-background"></div>
+        <div class="btn-particles"></div>
+      </button>
+
+      <!-- Toggle de sonidos -->
+      <button class="btn-sound-toggle" (click)="toggleSonidos()">
+        {{ sonidosHabilitados ? '🔊' : '🔇' }}
+      </button>
+    </div>
   </div>
 
-  <!-- Pago realizado -->
-  <div *ngIf="estadoPago === 'PAGO_REALIZADO'" class="pago-exitoso">
-    <div class="success-icon">
-      <i class="material-icons">check_circle</i>
+  <!-- =============================================== -->
+  <!-- ESTADO: PROCESANDO PAGO -->
+  <!-- =============================================== -->
+  <div *ngIf="estadoPago === EstadoPagoPedido.PROCESANDO_PAGO" class="pago-procesando">
+
+    <!-- Efectos de fondo durante procesamiento -->
+    <div class="processing-background-effects">
+      <!-- Ondas concéntricas -->
+      <div class="concentric-waves">
+        <div class="wave wave-1"></div>
+        <div class="wave wave-2"></div>
+        <div class="wave wave-3"></div>
+        <div class="wave wave-4"></div>
+      </div>
+
+      <!-- Partículas orbitales -->
+      <div class="orbital-particles">
+        <div class="particle orbit-1" *ngFor="let p of [1,2,3,4,5,6]"></div>
+        <div class="particle orbit-2" *ngFor="let p of [1,2,3,4]"></div>
+        <div class="particle orbit-3" *ngFor="let p of [1,2,3]"></div>
+      </div>
     </div>
-    <p><strong>¡Pago realizado exitosamente!</strong></p>
-    <p class="info">Tu pedido está siendo confirmado por nuestro equipo.</p>
-    <div class="pago-detalles" *ngIf="ultimoPago">
-      <p><small>Código de transacción: {{ ultimoPago.codigoTransaccion }}</small></p>
+
+    <!-- Spinner principal con múltiples anillos -->
+    <div class="main-spinner-container">
+      <!-- Anillos giratorios -->
+      <div class="spinner-ring ring-outer"></div>
+      <div class="spinner-ring ring-middle"></div>
+      <div class="spinner-ring ring-inner"></div>
+
+      <!-- Icono central animado -->
+      <div class="center-icon">
+        <span class="processing-icon">{{ obtenerIconoEstado() }}</span>
+      </div>
+
+      <!-- Indicador de progreso circular -->
+      <svg class="progress-circle-svg" viewBox="0 0 100 100">
+        <circle
+          class="progress-track"
+          cx="50"
+          cy="50"
+          r="45"
+        ></circle>
+        <circle
+          class="progress-bar"
+          cx="50"
+          cy="50"
+          r="45"
+          [style.stroke-dasharray]="283"
+          [style.stroke-dashoffset]="283 - (283 * porcentajeProcesamiento / 100)"
+        ></circle>
+      </svg>
+    </div>
+
+    <!-- Información de progreso -->
+    <div class="progress-info">
+      <h2 class="processing-title">{{ obtenerIconoEstado() }} Procesando tu pago...</h2>
+      <div class="progress-percentage">{{ porcentajeProcesamiento }}%</div>
+
+      <!-- Mensaje dinámico de fase -->
+      <div class="dynamic-message">{{ obtenerMensajeFaseActual() }}</div>
+
+      <!-- Barras de progreso por fases -->
+      <div class="phase-progress">
+        <div class="phase-item" [class.active]="mensajeProcesamiento === 'iniciando'" [class.completed]="['validando','conectando','banco','autorizando','finalizando'].includes(mensajeProcesamiento)">
+          <div class="phase-dot"></div>
+          <span>Iniciando</span>
+        </div>
+        <div class="phase-item" [class.active]="mensajeProcesamiento === 'validando'" [class.completed]="['conectando','banco','autorizando','finalizando'].includes(mensajeProcesamiento)">
+          <div class="phase-dot"></div>
+          <span>Validando</span>
+        </div>
+        <div class="phase-item" [class.active]="mensajeProcesamiento === 'conectando'" [class.completed]="['banco','autorizando','finalizando'].includes(mensajeProcesamiento)">
+          <div class="phase-dot"></div>
+          <span>Conectando</span>
+        </div>
+        <div class="phase-item" [class.active]="mensajeProcesamiento === 'banco'" [class.completed]="['autorizando','finalizando'].includes(mensajeProcesamiento)">
+          <div class="phase-dot"></div>
+          <span>Banco</span>
+        </div>
+        <div class="phase-item" [class.active]="mensajeProcesamiento === 'autorizando'" [class.completed]="['finalizando'].includes(mensajeProcesamiento)">
+          <div class="phase-dot"></div>
+          <span>Autorizando</span>
+        </div>
+        <div class="phase-item" [class.active]="mensajeProcesamiento === 'finalizando'">
+          <div class="phase-dot"></div>
+          <span>Finalizando</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información de seguridad -->
+    <div class="security-info">
+      <div class="security-badges">
+        <span class="badge">🔒 SSL 256-bit</span>
+        <span class="badge">🛡️ PCI DSS</span>
+        <span class="badge">✅ Verificado</span>
+      </div>
+      <p>Tu información está protegida con los más altos estándares de seguridad</p>
     </div>
   </div>
 
-  <!-- Pago fallido -->
-  <div *ngIf="estadoPago === 'PAGO_FALLIDO'" class="pago-fallido">
-    <div class="error-icon">
-      <i class="material-icons">error</i>
+  <!-- =============================================== -->
+  <!-- ESTADO: PAGO REALIZADO -->
+  <!-- =============================================== -->
+  <div *ngIf="estadoPago === EstadoPagoPedido.PAGO_REALIZADO" class="pago-exitoso">
+
+    <!-- Efectos de confetti -->
+    <div class="confetti-container">
+      <div class="confetti" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]"></div>
     </div>
-    <p><strong>No se pudo procesar el pago</strong></p>
-    <p class="error-info">Por favor verifica tus datos e intenta nuevamente</p>
-    <button class="btn-reintentar" (click)="reintentar()">
-      <i class="material-icons">refresh</i>
-      Intentar nuevamente
-    </button>
+
+    <!-- Icono de éxito con animación -->
+    <div class="success-icon-container">
+      <div class="success-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+      </div>
+      <div class="success-icon">
+        <span>✅</span>
+      </div>
+    </div>
+
+    <!-- Mensaje de éxito -->
+    <div class="success-message">
+      <h2>🎉 ¡Pago Completado!</h2>
+      <p>Tu transacción ha sido procesada exitosamente</p>
+      <div class="transaction-details">
+        <div class="detail-item">
+          <span class="label">Monto:</span>
+          <span class="value">${{ monto | number:'1.0-0' }} COP</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Método:</span>
+          <span class="value">{{ metodoSeleccionado }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Pedido:</span>
+          <span class="value">#{{ pedidoId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Efectos de celebración -->
+    <div class="celebration-effects">
+      <div class="sparkle" *ngFor="let i of [1,2,3,4,5,6]"></div>
+    </div>
   </div>
+
+  <!-- =============================================== -->
+  <!-- ESTADO: PAGO FALLIDO -->
+  <!-- =============================================== -->
+  <div *ngIf="estadoPago === EstadoPagoPedido.PAGO_FALLIDO" class="pago-fallido">
+
+    <!-- Icono de error con efectos -->
+    <div class="error-icon-container">
+      <div class="error-pulse"></div>
+      <div class="error-icon">
+        <span>❌</span>
+      </div>
+    </div>
+
+    <!-- Mensaje de error -->
+    <div class="error-message">
+      <h2>💳 Pago No Procesado</h2>
+      <p>Ha ocurrido un problema con tu transacción</p>
+      <div class="error-details">
+        <p>Por favor verifica tus datos e intenta nuevamente</p>
+      </div>
+    </div>
+
+    <!-- Botón para intentar de nuevo -->
+    <div class="retry-actions">
+      <button
+        class="btn-retry"
+        (click)="estadoPago = EstadoPagoPedido.PENDIENTE_PAGO; metodoSeleccionado = null; mostrarFormulario = false"
+      >
+        <span>🔄 Intentar Nuevamente</span>
+      </button>
+    </div>
+  </div>
+
 </div>
+
+<!-- Efectos de sonido y audio (silenciosos) -->
+<audio #audioContext preload="none" style="display: none;"></audio>

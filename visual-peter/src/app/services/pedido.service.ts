@@ -2,14 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { EstadoPedido } from '../models/enums';
 
-export enum EstadoPedido {
-  PENDIENTE = 'PENDIENTE',
-  EN_PREPARACION = 'EN_PREPARACION',
-  LISTO = 'LISTO',
-  ENTREGADO = 'ENTREGADO',
-  CANCELADO = 'CANCELADO'
-}
+// Re-exportar para compatibilidad
+export { EstadoPedido } from '../models/enums';
 
 export interface PedidoItem {
   nombre: string;
@@ -30,6 +26,12 @@ export interface Pedido {
   fechaCreacion?: string;
   fechaActualizacion?: string;
   observaciones?: string;
+  // Campos para domicilio
+  tipoPedido?: 'mesa' | 'domicilio';
+  telefono?: string;
+  direccion?: string;
+  barrio?: string;
+  referencia?: string;
 }
 
 @Injectable({

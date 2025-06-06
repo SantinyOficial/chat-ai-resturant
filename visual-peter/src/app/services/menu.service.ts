@@ -97,4 +97,9 @@ export class MenuService {
   getMenusDescription(): Observable<string> {
     return this.http.get(`${this.apiUrl}/description`, { responseType: 'text' });
   }
+
+  // Alias para getAllMenus (usado por algunos componentes)
+  getMenus(): Observable<Menu[]> {
+    return this.getAllMenus();
+  }
 }

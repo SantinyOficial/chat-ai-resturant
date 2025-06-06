@@ -210,7 +210,7 @@
     <div class="pagos-grid" *ngIf="!loadingPagos">
       <div class="pago-card" *ngFor="let pago of pagosFiltrados" [ngClass]="pago.estado.toLowerCase()">
         <div class="pago-header">
-          <h4>Pago #{{ pago.id?.substring(0, 8) || 'Sin ID' }}</h4>
+          <h4>Pago #{{ pago.id ? pago.id.substring(0, 8) : 'Sin ID' }}</h4>
           <span class="pago-estado" [ngClass]="pago.estado.toLowerCase()">
             {{ getEstadoLabel(pago.estado) }}
           </span>
@@ -224,7 +224,7 @@
           <p *ngIf="pago.fechaProcesamiento">
             <i class="material-icons">done</i> Procesado: {{ pago.fechaProcesamiento | date:'dd/MM/yyyy HH:mm' }}
           </p>
-        </div>        <div class="pago-actions" *ngIf="pago.estado === 'PENDIENTE' && pago.id">
+        </div>        <div class="pago-actions" *ngIf="(pago.estado === 'PENDIENTE') && pago.id">
           <button class="action-btn cancel-btn" (click)="cancelarPagoExistente(pago.id!)">
             <i class="material-icons">cancel</i> Cancelar
           </button>
@@ -233,7 +233,7 @@
           </button>
         </div>
 
-        <div class="pago-actions" *ngIf="pago.estado === 'APROBADO' && pago.id">
+        <div class="pago-actions" *ngIf="(pago.estado === 'APROBADO') && pago.id">
           <button class="action-btn refund-btn" (click)="solicitarReembolso(pago.id!)">
             <i class="material-icons">undo</i> Reembolsar
           </button>

@@ -15,7 +15,6 @@ export class RealizarPedidoComponent implements OnInit {
   @Input() clienteId: string = '';
   @Output() pedidoCreado = new EventEmitter<Pedido>();
   @Output() cerrarModal = new EventEmitter<void>();
-
   // Categoría seleccionada para filtrar el menú
   selectedCategory: string = 'all';
   // Elementos del menú obtenidos del servicio
@@ -25,6 +24,8 @@ export class RealizarPedidoComponent implements OnInit {
   // Mensaje de estado al realizar un pedido
   orderStatus: 'success' | 'error' | 'pending' | null = null;
   orderStatusMessage: string = '';
+  // Costo de domicilio
+  costodomicilio: number = 5000;
 
   constructor(
     private menuService: MenuService,
@@ -43,7 +44,6 @@ export class RealizarPedidoComponent implements OnInit {
 
     this.currentPedido.clienteId = this.clienteId;
   }
-
   // Inicializar un nuevo pedido
   initPedido(): Pedido {
     return {
@@ -53,7 +53,12 @@ export class RealizarPedidoComponent implements OnInit {
       items: [],
       total: 0,
       estado: EstadoPedido.PENDIENTE,
-      observaciones: ''
+      observaciones: '',
+      tipoPedido: 'mesa', // Por defecto mesa
+      telefono: '',
+      direccion: '',
+      barrio: '',
+      referencia: ''
     };
   }
 
@@ -149,19 +154,51 @@ export class RealizarPedidoComponent implements OnInit {
     );
   }
 
-  // Verificar si se puede confirmar el pedido
-  canConfirmOrder(): boolean {
-    return this.currentPedido.items.length > 0 &&
-           this.currentPedido.clienteNombre.trim() !== '' &&
-           this.currentPedido.mesa > 0;
+  // Seleccionar tipo de pedido
+  seleccionarTipoPedido(tipo: 'mesa' | 'domicilio') {
+    this.currentPedido.tipoPedido = tipo;
+
+    // Limpiar campos específicos cuando se cambia el tipo
+    if (tipo === 'mesa') {
+      this.currentPedido.telefono = '';
+      this.currentPedido.direccion = '';
+      this.currentPedido.barrio = '';
+      this.currentPedido.referencia = '';
+    } else {
+      this.currentPedido.mesa = 0;
+    }
   }
 
+  // Calcular total con domicilio
+  getTotalConDomicilio(): number {
+    const subtotal = this.currentPedido.total;
+    return this.currentPedido.tipoPedido === 'domicilio'
+      ? subtotal + this.costodomicilio
+      : subtotal;
+  }
+
+  // Validar si se puede confirmar el pedido
+  canConfirmOrder(): boolean {
+    const baseValidation = this.currentPedido.items.length > 0 &&
+                          this.currentPedido.clienteNombre.trim() !== '';
+
+    if (this.currentPedido.tipoPedido === 'mesa') {
+      return baseValidation && this.currentPedido.mesa > 0;
+    } else {
+      return baseValidation &&
+             this.currentPedido.telefono?.trim() !== '' &&
+             this.currentPedido.direccion?.trim() !== '';
+    }
+  }
   // Confirmar el pedido
   confirmOrder() {
     this.orderStatus = 'pending';
     this.orderStatusMessage = 'Procesando pedido...';
 
-    this.pedidoService.crearPedido(this.currentPedido).subscribe({
+    // Preparar el pedido con el mapeo correcto para el backend
+    const pedidoParaBackend = this.prepararPedidoParaBackend(this.currentPedido);
+
+    this.pedidoService.crearPedido(pedidoParaBackend).subscribe({
       next: (pedido) => {
         this.orderStatus = 'success';
         this.orderStatusMessage = 'Pedido realizado con éxito';
@@ -176,12 +213,33 @@ export class RealizarPedidoComponent implements OnInit {
         setTimeout(() => {
           this.cerrar();
         }, 2000);
-      },
-      error: (err) => {
+      },      error: (err) => {
         this.orderStatus = 'error';
         this.orderStatusMessage = 'Error al realizar el pedido. Inténtelo de nuevo.';
         console.error('Error al crear pedido', err);
       }
     });
+  }
+  // Preparar pedido con el mapeo correcto para el backend
+  private prepararPedidoParaBackend(pedido: Pedido): any {
+    // Crear una copia del pedido para evitar modificar el original
+    const pedidoBackend = {
+      ...pedido,
+      // Mapear tipoPedido del frontend a los enums del backend
+      tipoPedido: 'NORMAL', // Por defecto todos los pedidos son NORMAL
+      tipoEntrega: pedido.tipoPedido === 'mesa' ? 'PRESENCIAL' : 'DOMICILIO'
+    };
+
+    // Remover la propiedad tipoPedido del frontend que era string
+    delete (pedidoBackend as any).tipoPedido;
+
+    // Establecer las propiedades correctas del backend como enums
+    (pedidoBackend as any).tipoPedido = 'NORMAL';
+    (pedidoBackend as any).tipoEntrega = pedido.tipoPedido === 'mesa' ? 'PRESENCIAL' : 'DOMICILIO';
+
+    console.log('Pedido original:', pedido);
+    console.log('Pedido para backend:', pedidoBackend);
+
+    return pedidoBackend;
   }
 }

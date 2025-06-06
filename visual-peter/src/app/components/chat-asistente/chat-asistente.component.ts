@@ -166,15 +166,23 @@ export class ChatAsistenteComponent implements OnInit, OnDestroy, AfterViewCheck
       }
     });
   }
-
   ngAfterViewChecked() {
-    this.scrollToBottom();
+    // Removido el scroll automático agresivo para evitar problemas de rendimiento
   }
 
   scrollToBottom(): void {
     try {
-      this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
-    } catch(err) { }
+      if (this.scrollContainer && this.scrollContainer.nativeElement) {
+        const container = this.scrollContainer.nativeElement;
+        // Verificar si el elemento existe y tiene contenido
+        if (container.scrollHeight > container.clientHeight) {
+          container.scrollTop = container.scrollHeight;
+          console.log('🔄 Chat scroll automático aplicado');
+        }
+      }
+    } catch(err) {
+      console.warn('⚠️ Error en chat scroll automático:', err);
+    }
   }
 
   formatTime(): string {
@@ -187,14 +195,15 @@ export class ChatAsistenteComponent implements OnInit, OnDestroy, AfterViewCheck
     const messageText = this.userMessage.trim();
     this.userMessage = '';
     this.error = '';
-    this.loading = true;
-
-    // Agregar mensaje del usuario a la UI
+    this.loading = true;    // Agregar mensaje del usuario a la UI
     this.messages.push({
       sender: 'user',
       text: messageText,
       time: this.formatTime()
     });
+
+    // Scroll después de agregar mensaje del usuario
+    setTimeout(() => this.scrollToBottom(), 50);
 
     // Crear la solicitud para el backend con el ID del cliente
     const request: ChatRequest = {
@@ -214,14 +223,15 @@ export class ChatAsistenteComponent implements OnInit, OnDestroy, AfterViewCheck
 
         // Guardar ID de conversación y tiempo de última actividad
         localStorage.setItem('currentConversationId', response.conversationId);
-        localStorage.setItem('lastChatActivity', Date.now().toString());
-
-        // Agregar la respuesta del bot a la UI
+        localStorage.setItem('lastChatActivity', Date.now().toString());        // Agregar la respuesta del bot a la UI
         this.messages.push({
           sender: 'bot',
           text: response.message.content,
           time: this.formatTime()
         });
+
+        // Scroll después de agregar respuesta del bot
+        setTimeout(() => this.scrollToBottom(), 50);
 
         this.loading = false;
       },
