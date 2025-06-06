@@ -1,381 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { PedidoService, Pedido, EstadoPedido } from '../../services/pedido.service';
+import { PedidoService, Pedido } from '../../services/pedido.service';
+import { PagoService } from '../../services/pago.service';
+import { EstadoPagoPedido, EstadoPedido } from '../../models/enums';
+import { PagoClienteComponent } from '../pago-cliente/pago-cliente.component';
+import { EstadoSincronizacionService, EstadoSincronizado } from '../../services/estado-sincronizacion.service';
+import { Inject } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `    <div class="container">
-      <h2><i class="material-icons">receipt_long</i> Mis Pedidos</h2><div class="filtros">
-        <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterPedidos('all')">Todos</button>
-        <button class="filter-btn" [class.active]="selectedFilter === 'activos'" (click)="filterPedidos('activos')">Activos</button>
-        <button class="filter-btn" [class.active]="selectedFilter === 'completados'" (click)="filterPedidos('completados')">Completados</button>
-        <button class="refresh-btn" (click)="loadUserPedidos()">
-          <i class="material-icons">refresh</i> Actualizar
-        </button>
-      </div>
-
-      <div class="last-update" *ngIf="lastUpdate">
-        <small>Última actualización: {{lastUpdate | date:'dd/MM/yyyy HH:mm:ss'}}</small>
-      </div><div class="no-pedidos" *ngIf="misPedidos.length === 0">
-        <p>No tienes pedidos realizados. Puedes hacer tu pedido hablando con nuestro asistente.</p>
-        <button class="go-to-chat" routerLink="/chat-asistente">Ir al Asistente</button>
-      </div>
-
-      <div class="loading-indicator" *ngIf="isLoading">
-        <div class="spinner"></div>
-        <p>Cargando pedidos...</p>
-      </div>
-
-      <div class="pedidos-grid" *ngIf="misPedidos.length > 0 && !isLoading">
-        <div class="pedido-card" *ngFor="let pedido of misPedidos" [ngClass]="pedido.estado.toLowerCase()">
-          <div class="pedido-header">
-            <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8) || 'Nuevo'}}</span>
-            <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
-          </div>
-          <div class="pedido-content">
-            <h4>Detalle del Pedido</h4>
-            <ul class="pedido-items">
-              <li *ngFor="let item of pedido.items">
-                {{item.cantidad}} x {{item.nombre}}
-              </li>
-            </ul>
-            <div class="pedido-info">
-              <p><strong>Mesa:</strong> {{pedido.mesa}}</p>
-              <p><strong>Total:</strong> {{pedido.total | currency:'COP':'symbol':'1.0-0'}}</p>
-              <p><strong>Fecha:</strong> {{pedido.fechaCreacion | date:'dd/MM/yyyy H:mm'}}</p>
-              <p *ngIf="pedido.observaciones"><strong>Observaciones:</strong> {{pedido.observaciones}}</p>
-            </div>
-          </div>
-          <div class="pedido-progress" *ngIf="pedido.estado !== 'ENTREGADO' && pedido.estado !== 'CANCELADO'">
-            <div class="progress-steps">
-              <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'PENDIENTE')">
-                <div class="step-dot"></div>
-                <span class="step-label">Recibido</span>
-              </div>
-              <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'EN_PREPARACION')">
-                <div class="step-dot"></div>
-                <span class="step-label">En preparación</span>
-              </div>
-              <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'LISTO')">
-                <div class="step-dot"></div>
-                <span class="step-label">Listo</span>
-              </div>
-              <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'ENTREGADO')">
-                <div class="step-dot"></div>
-                <span class="step-label">Entregado</span>
-              </div>
-            </div>
-          </div>
-          <div class="pedido-status-message" *ngIf="pedido.estado === 'CANCELADO'">
-            <p>Este pedido ha sido cancelado.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .container {
-      padding: 0;
-      max-width: 1000px;
-      margin: 0 auto;
-    }    h2 {
-      color: #ffcc29;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    h2 .material-icons {
-      font-size: 1.8rem;
-    }
-
-    h4 {
-      color: #ffcc29;
-    }
-
-    .filtros {
-      display: flex;
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    .filter-btn {
-      padding: 8px 16px;
-      background: #333;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }    .filter-btn:hover {
-      background: #ffdd54;
-      box-shadow: 0 0 8px #ffcc29;
-    }
-
-    .refresh-btn {
-      padding: 8px 16px;
-      background: #444;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-left: auto;
-    }
-
-    .refresh-btn:hover {
-      background: #555;
-      transform: translateY(-2px);
-    }
-
-    .refresh-btn .material-icons {
-      font-size: 18px;    }
-
-    .last-update {
-      text-align: right;
-      color: #777;
-      margin-top: 5px;
-      font-size: 0.8rem;
-    }
-
-    .no-pedidos {
-      text-align: center;
-      padding: 40px 20px;
-      background: #222;
-      border-radius: 8px;
-      margin-top: 20px;
-      border: 2px solid #ffcc29;
-      color: #ddd;
-    }
-
-    .go-to-chat {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background: #ffcc29;
-      color: #181818;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .go-to-chat:hover {
-      background: #ffdd54;
-      box-shadow: 0 0 8px #ffcc29;
-    }
-
-    .pedidos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    .pedido-card {
-      background: #222;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: transform 0.3s ease;
-      border: 2px solid #ffcc29;
-    }
-
-    .pedido-card:hover {
-      transform: translateY(-5px);
-    }
-
-    .pedido-card.pendiente {
-      border-left: 4px solid #ff9800;
-    }
-
-    .pedido-card.en_preparacion {
-      border-left: 4px solid #2196f3;
-    }
-
-    .pedido-card.listo {
-      border-left: 4px solid #4caf50;
-    }
-
-    .pedido-card.entregado {
-      border-left: 4px solid #9e9e9e;
-      opacity: 0.8;
-    }
-
-    .pedido-card.cancelado {
-      border-left: 4px solid #f44336;
-      opacity: 0.7;
-    }
-
-    .pedido-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 15px;
-      background: #2a2a2a;
-      border-bottom: 1px solid #333;
-    }
-
-    .pedido-id {
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .pedido-status {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .pedido-card.pendiente .pedido-status {
-      background: #ff9800;
-      color: #000;
-    }
-
-    .pedido-card.en_preparacion .pedido-status {
-      background: #2196f3;
-      color: #fff;
-    }
-
-    .pedido-card.listo .pedido-status {
-      background: #4caf50;
-      color: #000;
-    }
-
-    .pedido-card.entregado .pedido-status {
-      background: #9e9e9e;
-      color: #000;
-    }
-
-    .pedido-card.cancelado .pedido-status {
-      background: #f44336;
-      color: #fff;
-    }
-
-    .pedido-content {
-      padding: 15px;
-    }
-
-    .pedido-items {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 15px 0;
-      color: #ddd;
-    }
-
-    .pedido-items li {
-      padding: 5px 0;
-      border-bottom: 1px dashed #333;
-    }
-
-    .pedido-info {
-      color: #bbb;
-      font-size: 0.95rem;
-    }
-
-    .pedido-info p {
-      margin: 5px 0;
-    }
-
-    .pedido-progress {
-      padding: 15px;
-      border-top: 1px solid #333;
-    }
-
-    .progress-steps {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-    }
-
-    .progress-steps::before {
-      content: '';
-      position: absolute;
-      top: 15px;
-      left: 20px;
-      right: 20px;
-      height: 2px;
-      background: #444;
-      z-index: 1;
-    }
-
-    .step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      z-index: 2;
-    }
-
-    .step-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #444;
-      margin-bottom: 8px;
-    }
-
-    .step.completed .step-dot {
-      background: #4caf50;
-    }
-
-    .step-label {
-      font-size: 0.8rem;
-      color: #888;
-      text-align: center;
-      max-width: 70px;
-    }
-
-    .step.completed .step-label {
-      color: #4caf50;
-    }
-
-    .pedido-status-message {
-      padding: 15px;
-      text-align: center;
-      color: #f44336;
-      border-top: 1px solid #333;    }
-
-    .loading-indicator {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 30px;
-      background: #222;
-      border-radius: 8px;
-      margin-top: 20px;
-      color: #ddd;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(255, 204, 41, 0.3);
-      border-radius: 50%;
-      border-top-color: #ffcc29;
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 15px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @media (max-width: 768px) {
-      .pedidos-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `]
+  imports: [CommonModule, RouterModule, PagoClienteComponent],
+  templateUrl: './pedidos.component.html',
+  styleUrls: ['./pedidos.component.scss']
 })
 export class PedidosComponent implements OnInit, OnDestroy {
   misPedidos: Pedido[] = [];
@@ -386,39 +25,95 @@ export class PedidosComponent implements OnInit, OnDestroy {
   // Usar el mismo clienteId que se usa en el asistente
   clienteId: string = localStorage.getItem('clienteId') ||
                       ('cliente-' + Math.floor(Math.random() * 1000));
+  // Estados de pago para cada pedido
+  estadosPago: { [pedidoId: string]: EstadoPagoPedido } = {};
+  // Estados sincronizados centralmente
+  estadosSincronizados: { [pedidoId: string]: EstadoSincronizado } = {};
+  private estadosSubscription?: Subscription;
 
-  constructor(private pedidoService: PedidoService) {
+  // Referencia del enum para usar en template
+  EstadoPagoPedido = EstadoPagoPedido;
+  constructor(
+    private pedidoService: PedidoService,
+    private pagoService: PagoService,
+    @Inject(EstadoSincronizacionService) private estadoSincronizacionService: EstadoSincronizacionService
+  ) {
     // Guardar el ID del cliente en localStorage si no existe
     if (!localStorage.getItem('clienteId')) {
       localStorage.setItem('clienteId', this.clienteId);
     }
   }
-
   ngOnInit() {
+    console.log('🚀 Inicializando componente de pedidos (meseros)...');
     this.loadUserPedidos();
 
     // Actualizar pedidos cada 30 segundos
     this.pedidosInterval = setInterval(() => {
       this.loadUserPedidos();
-    }, 30000);
-  }
+    }, 30000);    // Suscribirse a cambios de estado centralizados
+    this.estadosSubscription = this.estadoSincronizacionService.cambios$.subscribe(estados => {
+      // Procesar cada estado en el array
+      estados.forEach(cambio => {
+        if (cambio) {
+          console.log('🔄 Cambio de estado recibido en pedidos (meseros):', cambio);
 
+          // Actualizar estados locales
+          this.estadosSincronizados[cambio.pedidoId] = cambio;
+          this.estadosPago[cambio.pedidoId] = cambio.estadoPago;
+
+          // Actualizar el pedido correspondiente si existe en la lista
+          const pedidoIndex = this.misPedidos.findIndex(p => p.id === cambio.pedidoId);
+          if (pedidoIndex !== -1) {
+            this.misPedidos[pedidoIndex].estado = cambio.estadoPedido;
+            console.log(`✅ Pedido ${cambio.pedidoId} actualizado - Estado: ${cambio.estadoPedido}, Pago: ${cambio.estadoPago}`);
+          }
+        }
+      });
+    });    // Mantener también la suscripción original como respaldo
+    this.pagoService.estadoPagoChanged$.subscribe((cambio: any) => {
+      const { pedidoId, estadoPago } = cambio;
+      this.estadosPago[pedidoId] = estadoPago;
+    });
+  }
   ngOnDestroy() {
     // Limpiar el intervalo cuando el componente se destruye
     if (this.pedidosInterval) {
       clearInterval(this.pedidosInterval);
     }
-  }  loadUserPedidos() {
+    // Limpiar suscripciones
+    if (this.estadosSubscription) {
+      this.estadosSubscription.unsubscribe();
+    }
+  }
+  loadUserPedidos() {
     this.isLoading = true;
     this.pedidoService.getPedidosByCliente(this.clienteId).subscribe({
       next: (pedidos) => {
         // Guardar todos los pedidos sin filtrar
         this.misPedidos = pedidos;
 
+        // Cargar estados de pago para cada pedido SOLO si no existen ya
+        pedidos.forEach(pedido => {
+          if (pedido.id) {
+            // Solo actualizar si no tenemos ya un estado cargado o si es diferente
+            const estadoActual = this.estadosPago[pedido.id];
+            const estadoPersistente = this.pagoService.getEstadoPagoPedido(pedido.id);
+
+            // Priorizar estados más avanzados (ej: no sobrescribir PAGO_REALIZADO con PENDIENTE_PAGO)
+            if (!estadoActual || this.esEstadoMasAvanzado(estadoPersistente, estadoActual)) {
+              console.log(`🔄 Actualizando estado de pago para pedido ${pedido.id}: ${estadoActual} -> ${estadoPersistente}`);
+              this.estadosPago[pedido.id] = estadoPersistente;
+            } else {
+              console.log(`✅ Manteniendo estado existente para pedido ${pedido.id}: ${estadoActual}`);
+            }
+          }
+        });
+
         // Actualizar la vista aplicando el filtro actual
         this.filterPedidos(this.selectedFilter);
 
         console.log(`Se cargaron ${pedidos.length} pedidos para el cliente ${this.clienteId}`);
+        console.log('Estados de pago cargados:', this.estadosPago);
 
         // Guardar nuevamente el clienteId para mantener consistencia
         localStorage.setItem('clienteId', this.clienteId);
@@ -431,6 +126,19 @@ export class PedidosComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  // Método auxiliar para determinar si un estado es más avanzado que otro
+  private esEstadoMasAvanzado(nuevoEstado: EstadoPagoPedido, estadoActual: EstadoPagoPedido): boolean {
+    const jerarquia = {
+      [EstadoPagoPedido.PENDIENTE_PAGO]: 1,
+      [EstadoPagoPedido.PROCESANDO_PAGO]: 2,
+      [EstadoPagoPedido.PAGO_FALLIDO]: 2, // Mismo nivel que procesando para permitir reintentos
+      [EstadoPagoPedido.PAGO_REALIZADO]: 3
+    };
+
+    return jerarquia[nuevoEstado] > jerarquia[estadoActual];
+  }
+
   filterPedidos(filter: string) {
     this.selectedFilter = filter;
 
@@ -458,21 +166,103 @@ export class PedidosComponent implements OnInit, OnDestroy {
       return dateB.getTime() - dateA.getTime();
     });
   }
-
   getEstadoLabel(estado: EstadoPedido): string {
-    const labels = {
+    const estados = {
       [EstadoPedido.PENDIENTE]: 'Pendiente',
+      [EstadoPedido.CONFIRMADO]: 'Confirmado',
       [EstadoPedido.EN_PREPARACION]: 'En Preparación',
       [EstadoPedido.LISTO]: 'Listo para Entregar',
+      [EstadoPedido.EN_CAMINO]: 'En Camino',
       [EstadoPedido.ENTREGADO]: 'Entregado',
       [EstadoPedido.CANCELADO]: 'Cancelado'
     };
-    return labels[estado] || 'Desconocido';
+    return estados[estado] || estado;
   }
 
+  // Obtener estado de pago para un pedido
+  getEstadoPago(pedidoId: string): EstadoPagoPedido {
+    return this.estadosPago[pedidoId] || EstadoPagoPedido.PENDIENTE_PAGO;
+  }
+
+  // Verificar si un pedido necesita pago
+  necesitaPago(pedido: Pedido): boolean {
+    if (!pedido.id) return false;
+    const estadoPago = this.getEstadoPago(pedido.id);
+    return estadoPago === EstadoPagoPedido.PENDIENTE_PAGO &&
+           pedido.estado === EstadoPedido.PENDIENTE;
+  }  // Manejar evento de pago completado
+  onPagoCompletado(event: {pedidoId: string, exitoso: boolean, pago?: any}) {
+    console.log('🎉 Evento de pago completado recibido:', event);
+
+    if (event.exitoso) {
+      // Actualizar estado de pago local INMEDIATAMENTE
+      this.estadosPago[event.pedidoId] = EstadoPagoPedido.PAGO_REALIZADO;
+
+      console.log('✅ Actualizando pedido a EN_PREPARACION...');
+
+      // Primero actualizar en el servicio de sincronización para notificar a gestión-pedidos
+      this.estadoSincronizacionService.actualizarEstadoPago(
+        event.pedidoId,
+        EstadoPagoPedido.PAGO_REALIZADO
+      );
+
+      // Luego actualizar estado del pedido en backend
+      this.pedidoService.actualizarEstadoPedido(event.pedidoId, EstadoPedido.EN_PREPARACION)
+        .subscribe({
+          next: (pedido) => {
+            console.log('✅ Pedido actualizado exitosamente a EN_PREPARACION:', pedido);
+
+            // Actualizar también el pedido local
+            const pedidoIndex = this.misPedidos.findIndex(p => p.id === event.pedidoId);
+            if (pedidoIndex !== -1) {
+              this.misPedidos[pedidoIndex].estado = EstadoPedido.EN_PREPARACION;
+            }
+
+            // Sincronizar estado del pedido con el servicio centralizado
+            this.estadoSincronizacionService.actualizarEstadoPedido(
+              event.pedidoId,
+              EstadoPedido.EN_PREPARACION
+            );
+          },
+          error: (err) => {
+            console.error('❌ Error actualizando estado del pedido tras pago:', err);
+          }
+        });
+
+      // Mostrar mensaje de éxito al cliente
+      console.log('🎉 ¡Pago realizado exitosamente! Tu pedido se está preparando.');
+
+      // Recargar pedidos para reflejar todos los cambios
+      setTimeout(() => {
+        this.loadUserPedidos();
+      }, 2000);
+    } else {
+      console.log('❌ El pago falló');
+      // Actualizar estado de pago local
+      this.estadosPago[event.pedidoId] = EstadoPagoPedido.PAGO_FALLIDO;
+
+      // Sincronizar el fallo con el servicio centralizado
+      this.estadoSincronizacionService.actualizarEstadoPago(
+        event.pedidoId,
+        EstadoPagoPedido.PAGO_FALLIDO
+      );
+    }
+  }
+
+  // Obtener label del estado de pago
+  getEstadoPagoLabel(estadoPago: EstadoPagoPedido): string {
+    const labels = {
+      [EstadoPagoPedido.PENDIENTE_PAGO]: 'Pendiente de Pago',
+      [EstadoPagoPedido.PROCESANDO_PAGO]: 'Procesando Pago',
+      [EstadoPagoPedido.PAGO_REALIZADO]: 'Pago Completado',
+      [EstadoPagoPedido.PAGO_FALLIDO]: 'Pago Fallido'
+    };
+    return labels[estadoPago] || estadoPago;
+  }
   isStepCompleted(currentEstado: EstadoPedido, stepEstado: string): boolean {
     const estados = [
       EstadoPedido.PENDIENTE,
+      EstadoPedido.CONFIRMADO,
       EstadoPedido.EN_PREPARACION,
       EstadoPedido.LISTO,
       EstadoPedido.ENTREGADO
@@ -481,6 +271,6 @@ export class PedidosComponent implements OnInit, OnDestroy {
     const currentIndex = estados.indexOf(currentEstado);
     const stepIndex = estados.indexOf(stepEstado as EstadoPedido);
 
-    return stepIndex <= currentIndex;
+    return currentIndex >= stepIndex;
   }
 }

@@ -9,6 +9,7 @@
 </div>
 
 <ul class="sidebar-menu" [class.collapsed]="sidebarCollapsed">
+  <!-- SECCIÓN CLIENTES -->
   <li>
     <div class="sidebar-section" (click)="toggleClientes()">
       <i class="material-icons" [class.icon-collapsed]="sidebarCollapsed">people</i>
@@ -25,16 +26,28 @@
           <i class="material-icons">restaurant</i>
           <span>Pedidos</span>
         </a></li>
+        <li><a routerLink="/micropedidos" routerLinkActive="active">
+          <i class="material-icons">fastfood</i>
+          <span>Micropedidos</span>
+        </a></li>
+        <li><a routerLink="/pagos" routerLinkActive="active">
+          <i class="material-icons">payment</i>
+          <span>Pagos</span>
+        </a></li>
       </ul>
     </div>
-  </li>  <li>
+  </li>
+
+  <!-- SECCIÓN MESEROS -->
+  <li>
     <div class="sidebar-section" (click)="toggleMeseros()">
       <i class="material-icons" [class.icon-collapsed]="sidebarCollapsed">room_service</i>
       <span class="menu-text" *ngIf="!sidebarCollapsed">Meseros</span>
       <span class="arrow" *ngIf="!sidebarCollapsed">{{ meserosOpen ? '▼' : '►' }}</span>
     </div>
     <div class="submenu-wrapper" [class.expanded]="meserosOpen && !sidebarCollapsed" [class.collapsed]="!meserosOpen || sidebarCollapsed">
-      <ul class="submenu">        <li><a routerLink="/menu" routerLinkActive="active">
+      <ul class="submenu">
+        <li><a routerLink="/menu" routerLinkActive="active">
           <i class="material-icons">restaurant_menu</i>
           <span>Menú</span>
         </a></li>
@@ -45,6 +58,27 @@
         <li><a routerLink="/gestion-pedidos" routerLinkActive="active">
           <i class="material-icons">assignment</i>
           <span>Gestión Pedidos</span>
+        </a></li>
+        <li><a routerLink="/domicilios" routerLinkActive="active">
+          <i class="material-icons">delivery_dining</i>
+          <span>Domicilios</span>
+        </a></li>
+      </ul>
+    </div>
+  </li>
+
+  <!-- SECCIÓN COCINA -->
+  <li>
+    <div class="sidebar-section" (click)="toggleCocina()">
+      <i class="material-icons" [class.icon-collapsed]="sidebarCollapsed">kitchen</i>
+      <span class="menu-text" *ngIf="!sidebarCollapsed">Cocina</span>
+      <span class="arrow" *ngIf="!sidebarCollapsed">{{ cocinaOpen ? '▼' : '►' }}</span>
+    </div>
+    <div class="submenu-wrapper" [class.expanded]="cocinaOpen && !sidebarCollapsed" [class.collapsed]="!cocinaOpen || sidebarCollapsed">
+      <ul class="submenu">
+        <li><a routerLink="/cocina" routerLinkActive="active">
+          <i class="material-icons">kitchen</i>
+          <span>Gestión Cocina</span>
         </a></li>
       </ul>
     </div>

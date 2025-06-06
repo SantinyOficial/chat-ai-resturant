@@ -1,0 +1,890 @@
+.domicilios-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+h2 {
+  color: var(--primary-color);
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Pestañas */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #333;
+}
+
+.tab-btn {
+  padding: 12px 20px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.tab-btn:hover {
+  background: #444;
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+  color: #000;
+}
+
+/* Secciones */
+.seguimiento-section,
+.domiciliarios-section,
+.mapa-section,
+.configuracion-section {
+  background: #222;
+  border-radius: 12px;
+  padding: 30px;
+  border: 2px solid var(--primary-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.section-header h3 {
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.filtros-seguimiento,
+.mapa-controles {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.refresh-btn,
+.add-btn,
+.update-map-btn,
+.center-map-btn,
+.save-config-btn,
+.action-btn {
+  padding: 10px 15px;
+  background: var(--primary-color);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover,
+.add-btn:hover,
+.update-map-btn:hover,
+.center-map-btn:hover,
+.save-config-btn:hover,
+.action-btn:hover {
+  background: #c4d9ff;
+  transform: translateY(-1px);
+}
+
+.action-btn.assign-btn {
+  background: #4caf50;
+  color: #fff;
+}
+
+.action-btn.assign-btn:hover {
+  background: #45a049;
+}
+
+.action-btn.cancel-btn {
+  background: #f44336;
+  color: #fff;
+}
+
+.action-btn.cancel-btn:hover {
+  background: #da190b;
+}
+
+.action-btn.track-btn {
+  background: #2196f3;
+  color: #fff;
+}
+
+.action-btn.track-btn:hover {
+  background: #0b7dda;
+}
+
+.action-btn.complete-btn {
+  background: #ff9800;
+  color: #fff;
+}
+
+.action-btn.complete-btn:hover {
+  background: #e68900;
+}
+
+.action-btn.rating-btn {
+  background: #9c27b0;
+  color: #fff;
+}
+
+.action-btn.rating-btn:hover {
+  background: #7b1fa2;
+}
+
+/* Botones adicionales */
+.add-btn,
+.control-btn,
+.save-btn {
+  padding: 8px 16px;
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover,
+.control-btn:hover {
+  background: #555;
+}
+
+.add-btn {
+  background: var(--primary-color);
+  color: #000;
+}
+
+.add-btn:hover {
+  background: #ffdd54;
+}
+
+.save-btn {
+  background: #4caf50;
+  color: #fff;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #66bb6a;
+}
+
+.save-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+/* Grids y Cards */
+.domicilios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.domicilio-card {
+  background: #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #444;
+  transition: transform 0.3s ease;
+}
+
+.domicilio-card:hover {
+  transform: translateY(-2px);
+}
+
+.domicilio-card.solicitado {
+  border-left: 4px solid #ff9800;
+}
+
+.domicilio-card.asignado {
+  border-left: 4px solid #2196f3;
+}
+
+.domicilio-card.en_camino {
+  border-left: 4px solid #9c27b0;
+}
+
+.domicilio-card.entregado {
+  border-left: 4px solid #4caf50;
+}
+
+.domicilio-card.cancelado {
+  border-left: 4px solid #f44336;
+  opacity: 0.7;
+}
+
+.domicilio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #333;
+  border-bottom: 1px solid #444;
+}
+
+.domicilio-header h4 {
+  color: #fff;
+  margin: 0;
+}
+
+.domicilio-estado {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.domicilio-estado.solicitado {
+  background: #ff9800;
+  color: #000;
+}
+
+.domicilio-estado.asignado {
+  background: #2196f3;
+  color: #fff;
+}
+
+.domicilio-estado.en_camino {
+  background: #9c27b0;
+  color: #fff;
+}
+
+.domicilio-estado.entregado {
+  background: #4caf50;
+  color: #000;
+}
+
+.domicilio-estado.cancelado {
+  background: #f44336;
+  color: #fff;
+}
+
+.domicilio-info {
+  padding: 15px;
+}
+
+.domicilio-info h5 {
+  color: var(--primary-color);
+  margin: 15px 0 8px 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.domicilio-info p {
+  margin: 8px 0;
+  color: #ddd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.domicilio-info .material-icons {
+  font-size: 18px;
+  color: var(--primary-color);
+}
+
+.direccion-info,
+.domiciliario-info,
+.fechas-info {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #444;
+}
+
+.tiempo-info,
+.costo-info {
+  margin-bottom: 10px;
+}
+
+/* Progreso */
+.progreso-domicilio {
+  padding: 15px;
+  border-top: 1px solid #444;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: #444;
+  z-index: 1;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.step-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #444;
+  margin-bottom: 8px;
+}
+
+.step.completed .step-dot {
+  background: var(--primary-color);
+}
+
+.step-label {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: center;
+  max-width: 70px;
+}
+
+.step.completed .step-label {
+  color: var(--primary-color);
+}
+
+/* Acciones */
+.domicilio-actions {
+  display: flex;
+  gap: 10px;
+  padding: 15px;
+  background: #333;
+  border-top: 1px solid #444;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.assign-btn {
+  background: #2196f3;
+  color: #fff;
+}
+
+.cancel-btn {
+  background: #f44336;
+  color: #fff;
+}
+
+.start-btn {
+  background: #4caf50;
+  color: #fff;
+}
+
+.reassign-btn {
+  background: #ff9800;
+  color: #000;
+}
+
+.track-btn {
+  background: #9c27b0;
+  color: #fff;
+}
+
+.complete-btn {
+  background: #4caf50;
+  color: #fff;
+}
+
+.rating-btn {
+  background: var(--primary-color);
+  color: #000;
+}
+
+.action-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Estadísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #444;
+}
+
+.stat-card .material-icons {
+  font-size: 32px;
+  color: var(--primary-color);
+}
+
+.stat-info h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.stat-info p {
+  margin: 0;
+  color: #bbb;
+  font-size: 0.9rem;
+}
+
+.domiciliarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.domiciliario-card {
+  background: #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #444;
+  transition: transform 0.3s ease;
+}
+
+.domiciliario-card:hover {
+  transform: translateY(-2px);
+}
+
+.domiciliario-card.ocupado {
+  border-left: 4px solid #9c27b0;
+}
+
+.domiciliario-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #333;
+  border-bottom: 1px solid #444;
+}
+
+.domiciliario-avatar {
+  width: 50px;
+  height: 50px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+}
+
+.domiciliario-avatar .material-icons {
+  font-size: 24px;
+}
+
+.domiciliario-name {
+  flex: 1;
+}
+
+.domiciliario-name h4 {
+  margin: 0;
+  color: #fff;
+}
+
+.domiciliario-name p {
+  margin: 0;
+  color: #bbb;
+  font-size: 0.9rem;
+}
+
+.domiciliario-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: #666;
+  color: #fff;
+}
+
+.domiciliario-status.active {
+  background: #4caf50;
+  color: #000;
+}
+
+.domiciliario-status.busy {
+  background: #9c27b0;
+  color: #fff;
+}
+
+.domiciliario-info {
+  padding: 15px;
+}
+
+.domiciliario-info p {
+  margin: 8px 0;
+  color: #ddd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.domiciliario-info .material-icons {
+  font-size: 18px;
+  color: var(--primary-color);
+}
+
+.domiciliario-actions {
+  display: flex;
+  gap: 10px;
+  padding: 15px;
+  background: #333;
+  border-top: 1px solid #444;
+}
+
+.activate-btn {
+  background: #4caf50;
+  color: #fff;
+}
+
+.deactivate-btn {
+  background: #ff9800;
+  color: #000;
+}
+
+.info-btn {
+  background: #2196f3;
+  color: #fff;
+}
+
+/* Mapa */
+.mapa-container {
+  margin-bottom: 30px;
+}
+
+.mapa-placeholder {
+  height: 400px;
+  background: #2a2a2a;
+  border: 2px dashed #444;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #888;
+  padding: 40px;
+}
+
+.mapa-placeholder .material-icons {
+  font-size: 64px;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+}
+
+.leyenda-mapa {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leyenda-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.leyenda-color.disponible {
+  background: #4caf50;
+}
+
+.leyenda-color.ocupado {
+  background: #9c27b0;
+}
+
+.leyenda-color.destino {
+  background: #f44336;
+}
+
+.domiciliarios-activos {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #444;
+}
+
+.domiciliarios-activos h4 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+}
+
+.activos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #333;
+  border-radius: 6px;
+}
+
+.activo-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.activo-info strong {
+  color: #fff;
+}
+
+.activo-info .status {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  background: #4caf50;
+  color: #000;
+}
+
+.activo-info .status.busy {
+  background: #9c27b0;
+  color: #fff;
+}
+
+.activo-location {
+  color: #bbb;
+  font-size: 0.85rem;
+  font-family: monospace;
+}
+
+/* Configuración */
+.config-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+}
+
+.config-section {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #444;
+}
+
+.config-section h4 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  background: #333;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.zonas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.zona-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.remove-btn {
+  padding: 8px;
+  background: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-zone-btn {
+  padding: 10px;
+  background: var(--primary-color);
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+/* Estados y mensajes */
+.loading,
+.no-domicilios {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.status-message {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.status-message.success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid #4caf50;
+}
+
+.status-message.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid #f44336;
+}
+
+.status-message.info {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+  border: 1px solid #2196f3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .filtros-seguimiento,
+  .mapa-controles {
+    justify-content: center;
+  }
+
+  .domicilios-grid,
+  .domiciliarios-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .config-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .leyenda-mapa {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .activo-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .zona-item {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}

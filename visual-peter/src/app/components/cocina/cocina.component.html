@@ -1,0 +1,312 @@
+<div class="container">
+  <div class="header-section">
+    <h2><i class="material-icons">restaurant</i> Gestión de Cocina</h2>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="estadisticas-section" *ngIf="estadisticas">
+    <div class="stat-card">
+      <i class="material-icons">pending</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.pedidosPendientes }}</h3>
+        <p>Pendientes</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">restaurant</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.pedidosEnPreparacion }}</h3>
+        <p>En Preparación</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">check_circle</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.pedidosListos }}</h3>
+        <p>Listos</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">schedule</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.tiempoPromedioPreparacion }}</h3>
+        <p>Min. Promedio</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="material-icons">trending_up</i>
+      <div class="stat-info">
+        <h3>{{ estadisticas.eficienciaCocina }}%</h3>
+        <p>Eficiencia</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pestañas de estado -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'pendientes'" (click)="cambiarTab('pendientes')">
+      <i class="material-icons">hourglass_empty</i>
+      Pendientes ({{ pedidosPendientes.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'preparacion'" (click)="cambiarTab('preparacion')">
+      <i class="material-icons">restaurant</i>
+      En Preparación ({{ pedidosEnPreparacion.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'listos'" (click)="cambiarTab('listos')">
+      <i class="material-icons">check_circle</i>
+      Listos ({{ pedidosListos.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'cocineros'" (click)="cambiarTab('cocineros')">
+      <i class="material-icons">people</i>
+      Cocineros
+    </button>
+  </div>
+
+  <!-- Contenido de pestañas -->
+  <div class="tab-content">
+
+    <!-- Pedidos Pendientes -->
+    <div *ngIf="activeTab === 'pendientes'" class="pedidos-section">
+      <div class="section-header">
+        <h3>Pedidos Pendientes</h3>
+        <button class="refresh-btn" (click)="loadPedidosPendientes()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="!loadingPendientes">
+        <div class="pedido-card pendiente" *ngFor="let pedido of pedidosPendientes"
+             [class.prioridad-alta]="pedido.prioridad === 'ALTA'"
+             [class.prioridad-urgente]="pedido.prioridad === 'URGENTE'">
+
+          <div class="pedido-header">
+            <h4>Pedido #{{ pedido.numeroPedido || pedido.id.substring(0, 8) }}</h4>
+            <div class="prioridad-badge" [class]="'prioridad-' + pedido.prioridad.toLowerCase()">
+              {{ getPrioridadTexto(pedido.prioridad) }}
+            </div>
+          </div>
+
+          <div class="pedido-info">
+            <p><i class="material-icons">person</i> {{ pedido.clienteNombre }}</p>
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ pedido.mesa }}</p>
+            <p><i class="material-icons">access_time</i>
+               {{ pedido.fechaRecibido | date:'HH:mm' }}
+            </p>
+            <p *ngIf="pedido.tiempoEstimadoTotal">
+              <i class="material-icons">schedule</i>
+              Estimado: {{ pedido.tiempoEstimadoTotal }} min
+            </p>
+          </div>
+
+          <div class="pedido-items">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <span class="item-estado" [class]="'estado-' + item.estado.toLowerCase()">
+                {{ getEstadoTexto(item.estado) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="pedido-observaciones" *ngIf="pedido.observaciones">
+            <p><strong>Observaciones:</strong> {{ pedido.observaciones }}</p>
+          </div>
+
+          <div class="pedido-actions">
+            <select class="cocinero-select" [(ngModel)]="pedido.cocineroTemporal"
+                    [disabled]="procesandoPedido === pedido.id">
+              <option value="">Seleccionar cocinero</option>
+              <option *ngFor="let cocinero of cocinerosDisponibles" [value]="cocinero.id">
+                {{ cocinero.nombre }} ({{ cocinero.pedidosAsignados }} pedidos)
+              </option>
+            </select>
+
+            <button class="action-btn iniciar-btn"
+                    [disabled]="procesandoPedido === pedido.id"
+                    (click)="iniciarPreparacion(pedido)">
+              <i class="material-icons">{{ procesandoPedido === pedido.id ? 'hourglass_empty' : 'play_arrow' }}</i>
+              {{ procesandoPedido === pedido.id ? 'Iniciando...' : 'Iniciar' }}
+            </button>
+
+            <button class="action-btn priority-btn" (click)="cambiarPrioridad(pedido)">
+              <i class="material-icons">priority_high</i>
+            </button>
+          </div>
+        </div>
+      </div>      <div class="demo-loading" *ngIf="loadingPendientes">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando pedidos pendientes</p>
+        <p class="loading-subtext">Actualizando información en tiempo real...</p>
+      </div>
+
+      <div class="no-pedidos" *ngIf="!loadingPendientes && pedidosPendientes.length === 0">
+        <p>No hay pedidos pendientes en este momento.</p>
+      </div>
+    </div>
+
+    <!-- Pedidos en Preparación -->
+    <div *ngIf="activeTab === 'preparacion'" class="pedidos-section">
+      <div class="section-header">
+        <h3>Pedidos en Preparación</h3>
+        <button class="refresh-btn" (click)="loadPedidosEnPreparacion()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="!loadingPreparacion">
+        <div class="pedido-card preparacion" *ngFor="let pedido of pedidosEnPreparacion">
+
+          <div class="pedido-header">
+            <h4>Pedido #{{ pedido.numeroPedido || pedido.id.substring(0, 8) }}</h4>
+            <div class="tiempo-transcurrido">
+              <i class="material-icons">schedule</i>
+              {{ calcularTiempoTranscurrido(pedido.fechaIniciado) }}
+            </div>
+          </div>
+
+          <div class="pedido-info">
+            <p><i class="material-icons">person</i> {{ pedido.clienteNombre }}</p>
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ pedido.mesa }}</p>
+            <p *ngIf="pedido.cocineroAsignado">
+              <i class="material-icons">chef</i> {{ pedido.cocineroAsignado }}
+            </p>
+          </div>
+
+          <div class="pedido-items">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <div class="item-controls">
+                <select class="item-estado-select"
+                        [(ngModel)]="item.estado"
+                        (change)="actualizarEstadoItem(pedido.id, item.nombre, item.estado)">
+                  <option value="RECIBIDO">Recibido</option>
+                  <option value="EN_PREPARACION">En Preparación</option>
+                  <option value="LISTO">Listo</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="pedido-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="calcularProgreso(pedido)"></div>
+            </div>
+            <span class="progress-text">{{ calcularProgreso(pedido) }}% Completado</span>
+          </div>
+
+          <div class="pedido-actions">
+            <button class="action-btn pause-btn" (click)="pausarPedido(pedido)">
+              <i class="material-icons">pause</i> Pausar
+            </button>
+
+            <button class="action-btn complete-btn"
+                    [disabled]="calcularProgreso(pedido) < 100"
+                    (click)="marcarPedidoListo(pedido)">
+              <i class="material-icons">check</i> Marcar Listo
+            </button>
+          </div>
+        </div>
+      </div>      <div class="demo-loading" *ngIf="loadingPreparacion">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando pedidos en preparación</p>
+        <p class="loading-subtext">Consultando el estado de la cocina...</p>
+      </div>
+    </div>
+
+    <!-- Pedidos Listos -->
+    <div *ngIf="activeTab === 'listos'" class="pedidos-section">
+      <div class="section-header">
+        <h3>Pedidos Listos para Entregar</h3>
+        <button class="refresh-btn" (click)="loadPedidosListos()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="pedidos-grid" *ngIf="!loadingListos">
+        <div class="pedido-card listo" *ngFor="let pedido of pedidosListos">
+
+          <div class="pedido-header">
+            <h4>Pedido #{{ pedido.numeroPedido || pedido.id.substring(0, 8) }}</h4>
+            <div class="tiempo-espera">
+              <i class="material-icons">access_time</i>
+              Listo hace {{ calcularTiempoTranscurrido(pedido.fechaCompleto) }}
+            </div>
+          </div>
+
+          <div class="pedido-info">
+            <p><i class="material-icons">person</i> {{ pedido.clienteNombre }}</p>
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ pedido.mesa }}</p>
+          </div>
+
+          <div class="pedido-items">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <i class="material-icons item-check">check_circle</i>
+            </div>
+          </div>
+
+          <div class="pedido-actions">
+            <button class="action-btn notify-btn" (click)="notificarPedidoListo(pedido)">
+              <i class="material-icons">notifications</i> Notificar
+            </button>
+
+            <button class="action-btn deliver-btn" (click)="marcarPedidoEntregado(pedido)">
+              <i class="material-icons">done</i> Entregar
+            </button>
+          </div>
+        </div>
+      </div>      <div class="demo-loading" *ngIf="loadingListos">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando pedidos listos</p>
+        <p class="loading-subtext">Verificando pedidos completados...</p>
+      </div>
+    </div>
+
+    <!-- Cocineros -->
+    <div *ngIf="activeTab === 'cocineros'" class="cocineros-section">
+      <div class="section-header">
+        <h3>Cocineros Disponibles</h3>
+        <button class="refresh-btn" (click)="loadCocineros()">
+          <i class="material-icons">refresh</i> Actualizar
+        </button>
+      </div>
+
+      <div class="cocineros-grid" *ngIf="!loadingCocineros">
+        <div class="cocinero-card" *ngFor="let cocinero of cocinerosDisponibles"
+             [class.no-disponible]="!cocinero.disponible">
+
+          <div class="cocinero-avatar">
+            <i class="material-icons">person</i>
+          </div>
+
+          <div class="cocinero-info">
+            <h4>{{ cocinero.nombre }}</h4>
+            <p *ngIf="cocinero.especialidad">{{ cocinero.especialidad }}</p>
+            <p class="pedidos-asignados">
+              {{ cocinero.pedidosAsignados }} pedidos asignados
+            </p>
+          </div>
+
+          <div class="cocinero-estado">
+            <span class="estado-badge" [class.disponible]="cocinero.disponible"
+                  [class.ocupado]="!cocinero.disponible">
+              {{ cocinero.disponible ? 'Disponible' : 'Ocupado' }}
+            </span>
+          </div>
+
+          <div class="cocinero-actions" *ngIf="cocinero.pedidosAsignados > 0">
+            <button class="action-btn" (click)="verPedidosCocinero(cocinero)">
+              <i class="material-icons">list</i> Ver Pedidos
+            </button>
+          </div>
+        </div>
+      </div>      <div class="demo-loading" *ngIf="loadingCocineros">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando información del personal</p>
+        <p class="loading-subtext">Consultando cocineros disponibles...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Componente IA Asistente -->
+  <app-ia-asistente></app-ia-asistente>
+</div>

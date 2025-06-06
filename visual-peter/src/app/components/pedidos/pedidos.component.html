@@ -1,119 +1,90 @@
 <div class="container">
-      <h2>Realizar Pedido</h2>
-      <div class="pedido-container">
-        <div class="menu-section">
-          <h3>Menú Disponible</h3>
-          <div class="menu-filter">
-            <button class="filter-btn" [class.active]="selectedCategory === 'all'" (click)="filterCategory('all')">Todos</button>
-            <button class="filter-btn" [class.active]="selectedCategory === 'entrada'" (click)="filterCategory('entrada')">Entradas</button>
-            <button class="filter-btn" [class.active]="selectedCategory === 'principal'" (click)="filterCategory('principal')">Platos Principales</button>
-            <button class="filter-btn" [class.active]="selectedCategory === 'postre'" (click)="filterCategory('postre')">Postres</button>
-            <button class="filter-btn" [class.active]="selectedCategory === 'bebida'" (click)="filterCategory('bebida')">Bebidas</button>
-          </div>
-          <div class="menu-items">
-            <div class="menu-category" *ngIf="showCategory('entrada')">
-              <h4>Entradas</h4>
-              <div class="menu-item" *ngFor="let item of getItemsByCategory('entrada')">
-                <span class="item-name">{{item.nombre}}</span>
-                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
-                <button class="add-button" (click)="addToOrder(item)">Añadir</button>
-              </div>
-            </div>
+  <h2><i class="material-icons">receipt_long</i> Mis Pedidos</h2>
 
-            <div class="menu-category" *ngIf="showCategory('principal')">
-              <h4>Platos Principales</h4>
-              <div class="menu-item" *ngFor="let item of getItemsByCategory('principal')">
-                <span class="item-name">{{item.nombre}}</span>
-                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
-                <button class="add-button" (click)="addToOrder(item)">Añadir</button>
-              </div>
-            </div>
+  <div class="filtros">
+    <button class="filter-btn" [class.active]="selectedFilter === 'all'" (click)="filterPedidos('all')">Todos</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'activos'" (click)="filterPedidos('activos')">Activos</button>
+    <button class="filter-btn" [class.active]="selectedFilter === 'completados'" (click)="filterPedidos('completados')">Completados</button>
+    <button class="refresh-btn" (click)="loadUserPedidos()">
+      <i class="material-icons">refresh</i> Actualizar
+    </button>
+  </div>
 
-            <div class="menu-category" *ngIf="showCategory('postre')">
-              <h4>Postres</h4>
-              <div class="menu-item" *ngFor="let item of getItemsByCategory('postre')">
-                <span class="item-name">{{item.nombre}}</span>
-                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
-                <button class="add-button" (click)="addToOrder(item)">Añadir</button>
-              </div>
-            </div>
+  <div class="last-update" *ngIf="lastUpdate">
+    <small>Última actualización: {{lastUpdate | date:'dd/MM/yyyy HH:mm:ss'}}</small>
+  </div>
 
-            <div class="menu-category" *ngIf="showCategory('bebida')">
-              <h4>Bebidas</h4>
-              <div class="menu-item" *ngFor="let item of getItemsByCategory('bebida')">
-                <span class="item-name">{{item.nombre}}</span>
-                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
-                <button class="add-button" (click)="addToOrder(item)">Añadir</button>
-              </div>
-            </div>
+  <div class="no-pedidos" *ngIf="misPedidos.length === 0">
+    <p>No tienes pedidos realizados. Puedes hacer tu pedido hablando con nuestro asistente.</p>
+    <button class="go-to-chat" routerLink="/chat-asistente">Ir al Asistente</button>
+  </div>
+
+  <div class="loading-indicator" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Cargando pedidos...</p>
+  </div>
+
+  <div class="pedidos-grid" *ngIf="misPedidos.length > 0 && !isLoading">
+    <div class="pedido-card" *ngFor="let pedido of misPedidos" [ngClass]="pedido.estado.toLowerCase()">
+      <div class="pedido-header">
+        <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8) || 'Nuevo'}}</span>
+        <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
+      </div>
+      <div class="pedido-content">
+        <h4>Detalle del Pedido</h4>
+        <ul class="pedido-items">
+          <li *ngFor="let item of pedido.items">
+            {{item.cantidad}} x {{item.nombre}}
+          </li>
+        </ul>        <div class="pedido-info">
+          <p><strong>Mesa:</strong> {{pedido.mesa}}</p>
+          <p><strong>Total:</strong> {{pedido.total | currency:'COP':'symbol':'1.0-0'}}</p>
+          <p><strong>Fecha:</strong> {{pedido.fechaCreacion | date:'dd/MM/yyyy H:mm'}}</p>
+          <p *ngIf="pedido.observaciones"><strong>Observaciones:</strong> {{pedido.observaciones}}</p>
+
+          <!-- Estado de pago -->
+          <div class="pago-estado" *ngIf="pedido.id">
+            <p><strong>Estado de Pago:</strong>
+              <span class="estado-badge" [ngClass]="'estado-' + getEstadoPago(pedido.id)">
+                {{getEstadoPagoLabel(getEstadoPago(pedido.id))}}
+              </span>
+            </p>
           </div>
         </div>
 
-        <div class="pedido-resumen">
-          <h3>Tu Pedido</h3>
-          <div class="cliente-info">
-            <div class="form-group">
-              <label for="clienteNombre">Nombre:</label>
-              <input type="text" id="clienteNombre" [(ngModel)]="currentPedido.clienteNombre" placeholder="Su nombre">
-            </div>
-            <div class="form-group">
-              <label for="mesa">Mesa:</label>
-              <input type="number" id="mesa" [(ngModel)]="currentPedido.mesa" placeholder="Número de mesa">
-            </div>
+        <!-- Componente de pago -->
+        <div *ngIf="pedido.id && necesitaPago(pedido)" class="pago-section">
+          <app-pago-cliente
+            [pedidoId]="pedido.id"
+            [monto]="pedido.total"
+            [estadoPago]="getEstadoPago(pedido.id)"
+            (pagoCompletado)="onPagoCompletado($event)">
+          </app-pago-cliente>
+        </div>
+      </div>
+      <div class="pedido-progress" *ngIf="pedido.estado !== 'ENTREGADO' && pedido.estado !== 'CANCELADO'">
+        <div class="progress-steps">
+          <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'PENDIENTE')">
+            <div class="step-dot"></div>
+            <span class="step-label">Recibido</span>
           </div>
-          <div class="pedido-items">
-            <ng-container *ngIf="currentPedido.items.length === 0">
-              <p class="no-items">No has añadido items a tu pedido.</p>
-            </ng-container>
-            <div class="order-item" *ngFor="let item of currentPedido.items; let i = index">
-              <div class="item-details">
-                <span class="item-quantity">
-                  <button class="quantity-btn" (click)="decreaseQuantity(i)">-</button>
-                  {{item.cantidad}}
-                  <button class="quantity-btn" (click)="increaseQuantity(i)">+</button>
-                </span>
-                <span class="item-name">{{item.nombre}}</span>
-                <span class="item-price">{{item.precio * item.cantidad | currency:'COP':'symbol':'1.0-0'}}</span>
-              </div>
-              <button class="remove-btn" (click)="removeItem(i)">✕</button>
-            </div>
+          <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'EN_PREPARACION')">
+            <div class="step-dot"></div>
+            <span class="step-label">En preparación</span>
           </div>
-          <div class="form-group observaciones">
-            <label for="observaciones">Observaciones:</label>
-            <textarea id="observaciones" [(ngModel)]="currentPedido.observaciones" placeholder="Especificaciones adicionales del pedido"></textarea>
+          <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'LISTO')">
+            <div class="step-dot"></div>
+            <span class="step-label">Listo</span>
           </div>
-          <div class="pedido-total">
-            <span>Total:</span>
-            <span class="total-price">{{currentPedido.total | currency:'COP':'symbol':'1.0-0'}}</span>
-          </div>          <button class="confirm-button" [disabled]="!canConfirmOrder()" (click)="confirmOrder()">Confirmar Pedido</button>
-          <div class="order-status" *ngIf="orderStatus">
-            <div class="status-message {{orderStatus.toLowerCase()}}">{{orderStatusMessage}}</div>
+          <div class="step" [class.completed]="isStepCompleted(pedido.estado, 'ENTREGADO')">
+            <div class="step-dot"></div>
+            <span class="step-label">Entregado</span>
           </div>
         </div>
       </div>
-
-      <div class="mis-pedidos-section" *ngIf="misPedidos.length > 0">
-        <h3>Mis Pedidos</h3>
-        <div class="pedidos-list">
-          <div class="pedido-card" *ngFor="let pedido of misPedidos" [ngClass]="pedido.estado.toLowerCase()">
-            <div class="pedido-header">
-              <span class="pedido-id">Pedido #{{pedido.id?.substring(0, 8)}}</span>
-              <span class="pedido-status">{{getEstadoLabel(pedido.estado)}}</span>
-            </div>
-            <div class="pedido-content">
-              <ul class="pedido-items">
-                <li *ngFor="let item of pedido.items">
-                  {{item.cantidad}} x {{item.nombre}}
-                </li>
-              </ul>
-              <div class="pedido-info">
-                <p><strong>Mesa:</strong> {{pedido.mesa}}</p>
-                <p><strong>Total:</strong> {{pedido.total | currency:'COP':'symbol':'1.0-0'}}</p>
-                <p><strong>Estado:</strong> {{getEstadoLabel(pedido.estado)}}</p>
-                <p *ngIf="pedido.fechaCreacion"><strong>Fecha:</strong> {{pedido.fechaCreacion | date:'short'}}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="pedido-status-message" *ngIf="pedido.estado === 'CANCELADO'">
+        <p>Este pedido ha sido cancelado.</p>
       </div>
     </div>
+  </div>
+</div>

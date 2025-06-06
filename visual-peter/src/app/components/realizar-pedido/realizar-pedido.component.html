@@ -1,0 +1,329 @@
+<!-- 🚀 COMPONENTE FUTURISTA DE REALIZAR PEDIDO -->
+<div class="realizar-pedido-container" [@slideInFromRight]>
+  <!-- Fondo holográfico -->
+  <div class="holographic-background">
+    <div class="holo-layer layer-1"></div>
+    <div class="holo-layer layer-2"></div>
+    <div class="holo-layer layer-3"></div>
+  </div>
+
+  <!-- Canvas para efectos de partículas -->
+  <canvas #particleCanvas class="particle-canvas"></canvas>
+
+  <!-- Header futurista -->
+  <div class="pedido-header">
+    <div class="header-content">
+      <div class="header-icon">🚀</div>
+      <h3 class="header-title">CREAR PEDIDO</h3>
+      <div class="header-subtitle">Sistema Avanzado de Pedidos</div>
+    </div>
+    <button class="close-btn cyber-btn" (click)="cerrar()">
+      <span class="btn-icon">⚡</span>
+      <span class="btn-text">CERRAR</span>
+    </button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="pedido-content">
+    <!-- Panel izquierdo: Menú y configuración -->
+    <div class="menu-panel">
+      <!-- Selector de tipo de pedido -->
+      <div class="tipo-pedido-section">
+        <h4 class="section-title">📍 TIPO DE SERVICIO</h4>
+        <div class="tipo-pedido-grid">
+          <div class="tipo-card"
+               [class.selected]="currentPedido.tipoPedido === 'mesa'"
+               (click)="seleccionarTipoPedido('mesa')">
+            <div class="tipo-icon">🪑</div>
+            <div class="tipo-info">
+              <h5>Mesa</h5>
+              <p>Servicio en restaurante</p>
+            </div>
+            <div class="selection-indicator"></div>
+          </div>
+
+          <div class="tipo-card"
+               [class.selected]="currentPedido.tipoPedido === 'domicilio'"
+               (click)="seleccionarTipoPedido('domicilio')">
+            <div class="tipo-icon">🏠</div>
+            <div class="tipo-info">
+              <h5>Domicilio</h5>
+              <p>Entrega a domicilio</p>
+            </div>
+            <div class="selection-indicator"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información del cliente -->
+      <div class="cliente-info-section">
+        <h4 class="section-title">👤 INFORMACIÓN DEL CLIENTE</h4>
+        <div class="form-grid">
+          <div class="cyber-input-group">
+            <label for="clienteNombre" class="cyber-label">NOMBRE COMPLETO</label>
+            <input type="text"
+                   id="clienteNombre"
+                   [(ngModel)]="currentPedido.clienteNombre"
+                   placeholder="Ingrese su nombre completo"
+                   class="cyber-input">
+            <div class="input-glow"></div>
+          </div>
+
+          <!-- Campos específicos para mesa -->
+          <div class="cyber-input-group" *ngIf="currentPedido.tipoPedido === 'mesa'">
+            <label for="mesa" class="cyber-label">NÚMERO DE MESA</label>
+            <input type="number"
+                   id="mesa"
+                   [(ngModel)]="currentPedido.mesa"
+                   placeholder="Número de mesa"
+                   class="cyber-input">
+            <div class="input-glow"></div>
+          </div>
+
+          <!-- Campos específicos para domicilio -->
+          <div class="domicilio-fields" *ngIf="currentPedido.tipoPedido === 'domicilio'">
+            <div class="cyber-input-group">
+              <label for="telefono" class="cyber-label">TELÉFONO</label>
+              <input type="tel"
+                     id="telefono"
+                     [(ngModel)]="currentPedido.telefono"
+                     placeholder="Número de contacto"
+                     class="cyber-input">
+              <div class="input-glow"></div>
+            </div>
+
+            <div class="cyber-input-group">
+              <label for="direccion" class="cyber-label">DIRECCIÓN COMPLETA</label>
+              <input type="text"
+                     id="direccion"
+                     [(ngModel)]="currentPedido.direccion"
+                     placeholder="Calle, número, barrio"
+                     class="cyber-input">
+              <div class="input-glow"></div>
+            </div>
+
+            <div class="cyber-input-group">
+              <label for="barrio" class="cyber-label">BARRIO/ZONA</label>
+              <input type="text"
+                     id="barrio"
+                     [(ngModel)]="currentPedido.barrio"
+                     placeholder="Barrio o zona"
+                     class="cyber-input">
+              <div class="input-glow"></div>
+            </div>
+
+            <div class="cyber-input-group">
+              <label for="referencia" class="cyber-label">PUNTO DE REFERENCIA</label>
+              <input type="text"
+                     id="referencia"
+                     [(ngModel)]="currentPedido.referencia"
+                     placeholder="Edificio, local, etc."
+                     class="cyber-input">
+              <div class="input-glow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros del menú -->
+      <div class="menu-filter-section">
+        <h4 class="section-title">🍽️ CATEGORÍAS</h4>
+        <div class="menu-filter">
+          <button class="cyber-filter-btn"
+                  [class.active]="selectedCategory === 'all'"
+                  (click)="filterCategory('all')">
+            <span class="filter-icon">🌟</span>
+            <span class="filter-text">TODOS</span>
+          </button>
+          <button class="cyber-filter-btn"
+                  [class.active]="selectedCategory === 'entrada'"
+                  (click)="filterCategory('entrada')">
+            <span class="filter-icon">🥗</span>
+            <span class="filter-text">ENTRADAS</span>
+          </button>
+          <button class="cyber-filter-btn"
+                  [class.active]="selectedCategory === 'principal'"
+                  (click)="filterCategory('principal')">
+            <span class="filter-icon">🍖</span>
+            <span class="filter-text">PRINCIPALES</span>
+          </button>
+          <button class="cyber-filter-btn"
+                  [class.active]="selectedCategory === 'postre'"
+                  (click)="filterCategory('postre')">
+            <span class="filter-icon">🍰</span>
+            <span class="filter-text">POSTRES</span>
+          </button>
+          <button class="cyber-filter-btn"
+                  [class.active]="selectedCategory === 'bebida'"
+                  (click)="filterCategory('bebida')">
+            <span class="filter-icon">🥤</span>
+            <span class="filter-text">BEBIDAS</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Items del menú -->
+      <div class="menu-items-section">
+        <h4 class="section-title">📋 MENÚ DISPONIBLE</h4>
+        <div class="menu-items-container">
+          <!-- Entradas -->
+          <div class="menu-category" *ngIf="showCategory('entrada') && getItemsByCategory('entrada').length > 0">
+            <h5 class="category-title">🥗 ENTRADAS</h5>
+            <div class="menu-item cyber-card" *ngFor="let item of getItemsByCategory('entrada')">
+              <div class="item-header">
+                <span class="item-name">{{item.nombre}}</span>
+                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+              </div>
+              <p class="item-description">{{item.descripcion || 'Deliciosa opción de entrada'}}</p>
+              <button class="add-button cyber-add-btn" (click)="addToOrder(item)">
+                <span class="add-icon">⚡</span>
+                <span class="add-text">AÑADIR</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Platos Principales -->
+          <div class="menu-category" *ngIf="showCategory('principal') && getItemsByCategory('principal').length > 0">
+            <h5 class="category-title">🍖 PLATOS PRINCIPALES</h5>
+            <div class="menu-item cyber-card" *ngFor="let item of getItemsByCategory('principal')">
+              <div class="item-header">
+                <span class="item-name">{{item.nombre}}</span>
+                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+              </div>
+              <p class="item-description">{{item.descripcion || 'Plato principal especial'}}</p>
+              <button class="add-button cyber-add-btn" (click)="addToOrder(item)">
+                <span class="add-icon">⚡</span>
+                <span class="add-text">AÑADIR</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Postres -->
+          <div class="menu-category" *ngIf="showCategory('postre') && getItemsByCategory('postre').length > 0">
+            <h5 class="category-title">🍰 POSTRES</h5>
+            <div class="menu-item cyber-card" *ngFor="let item of getItemsByCategory('postre')">
+              <div class="item-header">
+                <span class="item-name">{{item.nombre}}</span>
+                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+              </div>
+              <p class="item-description">{{item.descripcion || 'Dulce tentación'}}</p>
+              <button class="add-button cyber-add-btn" (click)="addToOrder(item)">
+                <span class="add-icon">⚡</span>
+                <span class="add-text">AÑADIR</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bebidas -->
+          <div class="menu-category" *ngIf="showCategory('bebida') && getItemsByCategory('bebida').length > 0">
+            <h5 class="category-title">🥤 BEBIDAS</h5>
+            <div class="menu-item cyber-card" *ngFor="let item of getItemsByCategory('bebida')">
+              <div class="item-header">
+                <span class="item-name">{{item.nombre}}</span>
+                <span class="item-price">{{item.precio | currency:'COP':'symbol':'1.0-0'}}</span>
+              </div>
+              <p class="item-description">{{item.descripcion || 'Bebida refrescante'}}</p>
+              <button class="add-button cyber-add-btn" (click)="addToOrder(item)">
+                <span class="add-icon">⚡</span>
+                <span class="add-text">AÑADIR</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mensaje si no hay items -->
+          <div class="no-items-message" *ngIf="menuItems.length === 0">
+            <div class="no-items-icon">🤖</div>
+            <h5>SISTEMA INICIALIZANDO</h5>
+            <p>Cargando opciones de menú...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel derecho: Resumen del pedido -->
+    <div class="pedido-panel">
+      <div class="panel-header">
+        <h4 class="panel-title">🛒 TU PEDIDO</h4>
+        <div class="panel-stats">
+          <span class="item-count">{{currentPedido.items.length}} items</span>
+        </div>
+      </div>
+
+      <!-- Items del pedido -->
+      <div class="pedido-items">
+        <div class="empty-cart" *ngIf="currentPedido.items.length === 0">
+          <div class="empty-icon">🛍️</div>
+          <h5>CARRITO VACÍO</h5>
+          <p>Añade productos del menú</p>
+        </div>
+
+        <div class="order-item cyber-order-card" *ngFor="let item of currentPedido.items; let i = index">
+          <div class="item-main">
+            <div class="item-name">{{item.nombre}}</div>
+            <div class="item-controls">
+              <div class="quantity-controls">
+                <button class="quantity-btn decrease" (click)="decreaseQuantity(i)">−</button>
+                <span class="quantity-display">{{item.cantidad}}</span>
+                <button class="quantity-btn increase" (click)="increaseQuantity(i)">+</button>
+              </div>
+              <div class="item-price">{{item.precio * item.cantidad | currency:'COP':'symbol':'1.0-0'}}</div>
+            </div>
+          </div>
+          <button class="remove-btn" (click)="removeItem(i)">
+            <span class="remove-icon">🗑️</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="observaciones-section">
+        <label for="observaciones" class="cyber-label">💬 OBSERVACIONES</label>
+        <textarea id="observaciones"
+                  [(ngModel)]="currentPedido.observaciones"
+                  placeholder="Especificaciones adicionales del pedido..."
+                  class="cyber-textarea"></textarea>
+      </div>
+
+      <!-- Total del pedido -->
+      <div class="pedido-total">
+        <div class="total-breakdown">
+          <div class="subtotal-line">
+            <span>Subtotal:</span>
+            <span>{{currentPedido.total | currency:'COP':'symbol':'1.0-0'}}</span>
+          </div>
+          <div class="delivery-line" *ngIf="currentPedido.tipoPedido === 'domicilio'">
+            <span>Domicilio:</span>
+            <span>{{costodomicilio | currency:'COP':'symbol':'1.0-0'}}</span>
+          </div>
+          <div class="total-line">
+            <span>TOTAL:</span>
+            <span class="total-amount">{{getTotalConDomicilio() | currency:'COP':'symbol':'1.0-0'}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de confirmación -->
+      <button class="confirm-button cyber-confirm-btn"
+              [disabled]="!canConfirmOrder()"
+              (click)="confirmOrder()">
+        <div class="btn-content">
+          <span class="btn-icon">🚀</span>
+          <span class="btn-text">CONFIRMAR PEDIDO</span>
+          <div class="btn-glow"></div>
+        </div>
+      </button>
+
+      <!-- Estado del pedido -->
+      <div class="order-status" *ngIf="orderStatus">
+        <div class="status-message" [ngClass]="orderStatus">
+          <div class="status-icon" [ngSwitch]="orderStatus">
+            <span *ngSwitchCase="'success'">✅</span>
+            <span *ngSwitchCase="'error'">❌</span>
+            <span *ngSwitchCase="'pending'">⏳</span>
+          </div>
+          <div class="status-text">{{orderStatusMessage}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

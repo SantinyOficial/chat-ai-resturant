@@ -1,0 +1,121 @@
+<div class="ia-asistente-container" [class.expandido]="panelExpandido">
+  <!-- Header del panel -->
+  <div class="ia-header" (click)="togglePanel()">
+    <div class="header-content">
+      <div class="ia-avatar">
+        <div class="avatar-icon">🤖</div>
+        <div class="pulse-ring" [class.activo]="mostrarIndicadorEscucha"></div>
+      </div>
+
+      <div class="ia-info">
+        <h3 class="ia-title">IA Cocina</h3>
+        <div class="ia-status" [class]="claseEstado">
+          <span class="status-icon">{{ iconoEstado }}</span>
+          <span class="status-text">{{ estadoTexto }}</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button
+          class="btn-accion"
+          (click)="toggleEscuchaContinua(); $event.stopPropagation()"
+          [title]="voiceService.escuchaContinuaEstaActiva ? 'Desactivar escucha' : 'Activar escucha'">
+          {{ voiceService.escuchaContinuaEstaActiva ? '🔇' : '🎤' }}
+        </button>
+
+        <button
+          class="btn-accion"
+          (click)="limpiarConversacion(); $event.stopPropagation()"
+          title="Limpiar conversación">
+          🗑️
+        </button>
+
+        <button class="btn-toggle" [class.activo]="panelExpandido">
+          {{ panelExpandido ? '⬇️' : '⬆️' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido del chat -->
+  <div class="ia-content" *ngIf="panelExpandido">
+    <!-- Área de mensajes -->
+    <div class="chat-container" #chatContainer>
+      <div class="chat-messages">
+        <!-- Mensaje de bienvenida si no hay mensajes -->
+        <div class="mensaje-bienvenida" *ngIf="mensajes.length === 0">
+          <div class="bienvenida-avatar">🤖</div>
+          <div class="bienvenida-texto">
+            <h4>¡Hola! Soy tu asistente de cocina</h4>
+            <p>Di <strong>"viernes"</strong> seguido de tu pregunta o comando.</p>
+            <div class="ejemplos">
+              <div class="ejemplo">💬 "Viernes, ¿cuál es el estado de la mesa 5?"</div>
+              <div class="ejemplo">💬 "Viernes, marca como listo el plato principal de la orden 23"</div>
+              <div class="ejemplo">💬 "Viernes, ¿qué pedidos están pendientes?"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensajes de la conversación -->
+        <div
+          class="mensaje"
+          *ngFor="let mensaje of mensajes; trackBy: trackByMensaje"
+          [class.usuario]="mensaje.tipo === 'usuario'"
+          [class.asistente]="mensaje.tipo === 'asistente'">
+
+          <div class="mensaje-avatar">
+            {{ mensaje.tipo === 'usuario' ? '👨‍🍳' : '🤖' }}
+          </div>
+
+          <div class="mensaje-content">
+            <div class="mensaje-texto">{{ mensaje.texto }}</div>
+            <div class="mensaje-tiempo">{{ formatearTiempo(mensaje.fecha) }}</div>
+          </div>
+        </div>
+
+        <!-- Indicador de procesamiento -->
+        <div class="mensaje asistente procesando" *ngIf="estadoVoz === 'procesando'">
+          <div class="mensaje-avatar">🤖</div>
+          <div class="mensaje-content">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input de texto -->
+    <div class="chat-input-container">
+      <div class="input-wrapper">
+        <input
+          #inputTexto
+          type="text"
+          class="chat-input"
+          [(ngModel)]="mensajeTexto"
+          (keydown)="onEnterKey($event)"
+          placeholder="Escribe tu mensaje o usa comandos de voz..."
+          [disabled]="estadoVoz === 'procesando'"
+        />
+
+        <button
+          class="btn-enviar"
+          (click)="enviarMensajeTexto()"
+          [disabled]="!mensajeTexto.trim() || estadoVoz === 'procesando'"
+          title="Enviar mensaje">
+          <span class="btn-enviar-icon">{{ estadoVoz === 'procesando' ? '⏳' : '📤' }}</span>
+        </button>
+      </div>
+
+      <!-- Indicador de escucha activa -->
+      <div class="escucha-indicator" *ngIf="mostrarIndicadorEscucha">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <span class="escucha-text">Escuchando... Di "viernes" para activar</span>
+      </div>
+    </div>
+  </div>
+</div>

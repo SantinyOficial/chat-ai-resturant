@@ -1,0 +1,210 @@
+<div class="container">
+  <!-- Sistema de Notificaciones Elegante -->
+  <div class="notificacion-overlay" *ngIf="notificacionVisible"
+       [ngClass]="{'exito': notificacionTipo === 'exito', 'error': notificacionTipo === 'error', 'info': notificacionTipo === 'info'}">
+    <div class="notificacion-contenido">
+      <div class="notificacion-icono">
+        <i class="material-icons" *ngIf="notificacionTipo === 'exito'">check_circle</i>
+        <i class="material-icons" *ngIf="notificacionTipo === 'error'">error</i>
+        <i class="material-icons" *ngIf="notificacionTipo === 'info'">info</i>
+      </div>
+      <div class="notificacion-texto">
+        <h3>{{ notificacionTitulo }}</h3>
+        <p>{{ notificacionMensaje }}</p>
+      </div>
+      <button class="notificacion-cerrar" (click)="notificacionVisible = false">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+  </div>
+
+  <div class="header-section">
+    <h2><i class="material-icons">fastfood</i> Micropedidos Express</h2>
+    <p>Ordena pequeños pedidos sin interrumpir tu comida principal</p>
+  </div>
+
+  <!-- Tabs de Navegación -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'crear'" (click)="activeTab = 'crear'">
+      <i class="material-icons">add_shopping_cart</i> Crear Micropedido
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'mis-micropedidos'" (click)="activeTab = 'mis-micropedidos'; loadMisMicropedidos()">
+      <i class="material-icons">history</i> Mis Micropedidos
+    </button>
+  </div>
+
+  <!-- Contenido de Tabs -->
+  <div class="tab-content">
+    <!-- Crear Micropedido -->
+    <div *ngIf="activeTab === 'crear'" class="crear-micropedido">
+      <!-- Filtro por Tipo -->
+      <div class="filtros">
+        <button class="filtro-btn"
+                [class.active]="tipoSeleccionado === null"
+                (click)="filtrarPorTipo(null)">
+          Todos
+        </button>
+        <button *ngFor="let tipo of tiposDisponibles"
+                class="filtro-btn"
+                [class.active]="tipoSeleccionado === tipo"
+                (click)="filtrarPorTipo(tipo)">
+          {{ getTipoIcono(tipo) }} {{ getTipoTexto(tipo) }}
+        </button>
+      </div>
+
+      <!-- Opciones Disponibles -->
+      <div class="opciones-grid" *ngIf="!loadingOpciones">
+        <div class="opcion-card" *ngFor="let opcion of opcionesFiltradas"
+             [class.no-disponible]="!opcion.disponible">
+
+          <div class="opcion-info">
+            <span class="tipo-badge">{{ getTipoIcono(opcion.tipo) }}</span>
+            <h3>{{ opcion.nombre }}</h3>
+            <p class="precio">{{ opcion.precio | currency }}</p>
+            <p *ngIf="opcion.descripcion">{{ opcion.descripcion }}</p>
+            <p class="tiempo-prep" *ngIf="opcion.tiempoPreparacion">
+              <i class="material-icons">schedule</i> {{ opcion.tiempoPreparacion }} min
+            </p>
+          </div>
+
+          <div class="opcion-actions">
+            <button class="action-btn"
+                    [disabled]="!puedeAgregarItem(opcion) || procesando"
+                    (click)="agregarItem(opcion)">
+              <i class="material-icons">add_shopping_cart</i>
+            </button>
+            <span class="cantidad" *ngIf="getCantidadEnCarrito(opcion) > 0">
+              {{ getCantidadEnCarrito(opcion) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="demo-loading" *ngIf="loadingOpciones">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando opciones disponibles</p>
+        <p class="loading-subtext">Obteniendo productos frescos...</p>
+      </div>
+
+      <!-- Carrito de Compras -->
+      <div class="carrito-section">
+        <h3>Tu Pedido</h3>
+
+        <div class="carrito-empty" *ngIf="itemsCarrito.length === 0">
+          <i class="material-icons">shopping_cart</i>
+          <p>Tu carrito está vacío</p>
+        </div>
+
+        <div class="carrito-items" *ngIf="itemsCarrito.length > 0">
+          <div class="carrito-item" *ngFor="let item of itemsCarrito; let i = index">
+            <div class="item-info">
+              <h4>{{ item.nombre }}</h4>
+              <p>{{ item.precio | currency }}</p>
+            </div>
+            <div class="item-controls">
+              <button (click)="cambiarCantidad(i, -1)">
+                <i class="material-icons">remove</i>
+              </button>
+              <span>{{ item.cantidad }}</span>
+              <button (click)="cambiarCantidad(i, 1)">
+                <i class="material-icons">add</i>
+              </button>
+              <button (click)="removerItem(i)" class="remove-btn">
+                <i class="material-icons">delete</i>
+              </button>
+            </div>
+          </div>
+
+          <div class="carrito-total">
+            <div class="total-row">
+              <span>Total:</span>
+              <span class="total-precio">{{ calcularTotal() | currency }}</span>
+            </div>
+            <div class="tiempo-row" *ngIf="tiempoEstimadoTotal > 0">
+              <span>Tiempo estimado:</span>
+              <span>{{ tiempoEstimadoTotal }} minutos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario para completar pedido -->
+        <div class="formulario-pedido" *ngIf="itemsCarrito.length > 0">
+          <div class="form-group">
+            <label for="mesa">Número de Mesa</label>
+            <input type="number" id="mesa" [(ngModel)]="mesa" min="1" required>
+          </div>
+
+          <div class="form-group">
+            <label for="observaciones">Observaciones (Opcional)</label>
+            <textarea id="observaciones" [(ngModel)]="observaciones" rows="2"></textarea>
+          </div>
+
+          <button class="submit-btn"
+                  [disabled]="procesando || mesa <= 0"
+                  (click)="crearMicropedido()">
+            <i class="material-icons">{{ procesando ? 'hourglass_empty' : 'send' }}</i>
+            {{ procesando ? 'Procesando...' : 'Crear Micropedido' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mis Micropedidos -->
+    <div *ngIf="activeTab === 'mis-micropedidos'" class="mis-micropedidos">
+      <!-- Filtros por Estado -->
+      <div class="filtros">
+        <button class="filtro-btn"
+                [class.active]="filtroEstado === null"
+                (click)="filtrarPorEstado(null)">
+          Todos
+        </button>
+        <button *ngFor="let estado of estadosDisponibles"
+                class="filtro-btn"
+                [class.active]="filtroEstado === estado"
+                (click)="filtrarPorEstado(estado)">
+          {{ getEstadoTexto(estado) }}
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div class="demo-loading" *ngIf="loadingMicropedidos">
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando tus micropedidos</p>
+        <p class="loading-subtext">Consultando historial de pedidos...</p>
+      </div>
+
+      <!-- Lista de Micropedidos -->
+      <div class="micropedidos-list" *ngIf="!loadingMicropedidos">
+        <div class="no-micropedidos" *ngIf="micropedidosFiltrados.length === 0">
+          <p>No tienes micropedidos con este estado.</p>
+        </div>
+
+        <div class="micropedido-card" *ngFor="let micro of micropedidosFiltrados">          <div class="micropedido-header">
+            <h4>Micropedido #{{ micro.id ? micro.id.substring(0, 8) : 'Nuevo' }}</h4>
+            <div class="estado-badge" [ngClass]="getEstadoClase(micro.estado)">
+              {{ getEstadoTexto(micro.estado) }}
+            </div>
+          </div><div class="micropedido-info">
+            <p><i class="material-icons">table_restaurant</i> Mesa {{ micro.mesa }}</p>
+            <p><i class="material-icons">schedule</i> {{ micro.fechaCreacion ? (micro.fechaCreacion | date:'dd/MM HH:mm') : 'Hace un momento' }}</p>
+            <p><i class="material-icons">monetization_on</i> {{ micro.total | currency }}</p>
+          </div>
+
+          <div class="micropedido-items">
+            <div class="item" *ngFor="let item of micro.items">
+              <span>{{ item.cantidad }}x {{ item.nombre }}</span>
+              <span>{{ item.precio * item.cantidad | currency }}</span>
+            </div>
+          </div>
+
+          <div class="micropedido-actions" *ngIf="puedeCancelar(micro)">
+            <button class="action-btn cancel-btn" (click)="cancelarMicropedido(micro)">
+              <i class="material-icons">cancel</i> Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

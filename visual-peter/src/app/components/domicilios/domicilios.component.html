@@ -1,0 +1,374 @@
+<div class="domicilios-container">
+  <div class="header">
+    <h2>Gestión de Domicilios</h2>
+  </div>
+
+  <!-- Pestañas de navegación -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'seguimiento'" (click)="cambiarTab('seguimiento')">
+      <i class="material-icons">track_changes</i> Seguimiento
+    </button>
+    <button class="tab" [class.active]="activeTab === 'domiciliarios'" (click)="cambiarTab('domiciliarios')">
+      <i class="material-icons">people</i> Domiciliarios
+    </button>
+    <button class="tab" [class.active]="activeTab === 'mapa'" (click)="cambiarTab('mapa')">
+      <i class="material-icons">map</i> Mapa
+    </button>
+    <button class="tab" [class.active]="activeTab === 'configuracion'" (click)="cambiarTab('configuracion')">
+      <i class="material-icons">settings</i> Configuración
+    </button>
+  </div>
+
+  <div class="content">
+    <!-- Sección de Seguimiento de Domicilios -->
+    <div *ngIf="activeTab === 'seguimiento'" class="seguimiento-section">
+      <div class="section-header">
+        <h3>Seguimiento de Domicilios</h3>
+        <div class="filtros-seguimiento">
+          <select [(ngModel)]="filtroEstado" (change)="filtrarDomicilios()">
+            <option value="">Todos los estados</option>
+            <option value="PENDIENTE">Pendientes</option>
+            <option value="ASIGNADO">Asignados</option>
+            <option value="EN_CAMINO">En Camino</option>
+            <option value="ENTREGADO">Entregados</option>
+            <option value="CANCELADO">Cancelados</option>
+          </select>
+          <button class="refresh-btn" (click)="cargarDomicilios()" [disabled]="loadingDomicilios">
+            <i class="material-icons">{{ loadingDomicilios ? 'hourglass_empty' : 'refresh' }}</i>
+            {{ loadingDomicilios ? 'Cargando...' : 'Actualizar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="domicilios-grid" *ngIf="!loadingDomicilios">
+        <div class="domicilio-card" *ngFor="let domicilio of domiciliosFiltrados" [ngClass]="'estado-' + domicilio.estado.toLowerCase()">
+          <div class="domicilio-header">
+            <h3>Pedido #{{ domicilio.pedidoId }}</h3>
+            <span class="estado-badge" [ngClass]="'estado-' + domicilio.estado.toLowerCase()">
+              {{ getEstadoLabel(domicilio.estado) }}
+            </span>
+          </div>
+
+          <div class="domicilio-body">
+            <div class="direccion-info">
+              <h4><i class="material-icons">location_on</i> Dirección de Entrega</h4>
+              <p>{{ domicilio.direccionDestino?.calle }} {{ domicilio.direccionDestino?.numero }}</p>              <p *ngIf="domicilio.direccionDestino?.barrio">
+                <i class="material-icons">home</i> {{ domicilio.direccionDestino?.barrio }}
+              </p>
+              <p *ngIf="domicilio.direccionDestino?.referencias">
+                <i class="material-icons">info</i> {{ domicilio.direccionDestino?.referencias }}
+              </p>
+            </div>
+
+            <div class="tiempo-info" *ngIf="domicilio.tiempoEstimadoEntrega">
+              <p><i class="material-icons">schedule</i> Tiempo estimado: {{ domicilio.tiempoEstimadoEntrega }} min</p>
+            </div>
+
+            <div class="domiciliario-info" *ngIf="domicilio.domiciliario">
+              <h4><i class="material-icons">person</i> Domiciliario</h4>
+              <p>{{ domicilio.domiciliario.nombre }}</p>
+              <p><i class="material-icons">phone</i> {{ domicilio.domiciliario.telefono }}</p>
+              <p><i class="material-icons">motorcycle</i> {{ getTipoVehiculoLabel(domicilio.domiciliario.vehiculo) }}</p>
+              <p *ngIf="domicilio.domiciliario.calificacion">
+                <i class="material-icons">star</i> Calificación: {{ domicilio.domiciliario.calificacion }}/5
+              </p>
+            </div>
+
+            <div class="observaciones" *ngIf="domicilio.observaciones">
+              <p><i class="material-icons">note</i> {{ domicilio.observaciones }}</p>
+            </div>
+          </div>
+
+          <!-- Progreso del pedido -->
+          <div class="progreso-domicilio" *ngIf="domicilio.estado !== 'CANCELADO'">
+            <div class="progress-steps">
+              <div class="step" [class.completed]="isStepCompleted(domicilio.estado, 'PENDIENTE')">
+                <div class="step-dot"></div>
+                <span class="step-label">Pendiente</span>
+              </div>
+              <div class="step" [class.completed]="isStepCompleted(domicilio.estado, 'ASIGNADO')">
+                <div class="step-dot"></div>
+                <span class="step-label">Asignado</span>
+              </div>
+              <div class="step" [class.completed]="isStepCompleted(domicilio.estado, 'EN_CAMINO')">
+                <div class="step-dot"></div>
+                <span class="step-label">En Camino</span>
+              </div>
+              <div class="step" [class.completed]="isStepCompleted(domicilio.estado, 'ENTREGADO')">
+                <div class="step-dot"></div>
+                <span class="step-label">Entregado</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones según el estado -->
+          <div class="domicilio-actions">
+            <ng-container [ngSwitch]="domicilio.estado">
+              <ng-container *ngSwitchCase="'PENDIENTE'">
+                <button class="action-btn assign-btn" (click)="asignarDomiciliario(domicilio.pedidoId)">
+                  <i class="material-icons">assignment_ind</i> Asignar
+                </button>
+                <button class="action-btn cancel-btn" (click)="cancelarDomicilio(domicilio.pedidoId)">
+                  <i class="material-icons">cancel</i> Cancelar
+                </button>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'ASIGNADO'">
+                <button class="action-btn start-btn" (click)="iniciarDomicilio(domicilio.pedidoId)">
+                  <i class="material-icons">play_arrow</i> Iniciar
+                </button>
+                <button class="action-btn reassign-btn" (click)="asignarDomiciliario(domicilio.pedidoId)">
+                  <i class="material-icons">swap_horiz</i> Reasignar
+                </button>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'EN_CAMINO'">
+                <button class="action-btn track-btn" (click)="verSeguimiento(domicilio.pedidoId)">
+                  <i class="material-icons">location_on</i> Seguir
+                </button>
+                <button class="action-btn complete-btn" (click)="completarDomicilio(domicilio.pedidoId)">
+                  <i class="material-icons">done</i> Entregar
+                </button>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'ENTREGADO'">
+                <button class="action-btn rating-btn" (click)="calificarServicio(domicilio.pedidoId)">
+                  <i class="material-icons">star</i> Calificar
+                </button>
+              </ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingDomicilios">
+        <p>Cargando domicilios...</p>
+      </div>
+
+      <div class="no-domicilios" *ngIf="!loadingDomicilios && domiciliosFiltrados.length === 0">
+        <p>No se encontraron domicilios con los filtros seleccionados.</p>
+      </div>
+    </div>
+
+    <!-- Gestión de Domiciliarios -->
+    <div *ngIf="activeTab === 'domiciliarios'" class="domiciliarios-section">
+      <div class="section-header">
+        <h3>Gestión de Domiciliarios</h3>
+        <button class="add-btn" (click)="abrirFormularioDomiciliario()">
+          <i class="material-icons">add</i> Agregar Domiciliario
+        </button>
+      </div>
+
+      <!-- Estadísticas rápidas -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <i class="material-icons">people</i>
+          <div class="stat-info">
+            <h3>{{ domiciliarios.length }}</h3>
+            <p>Total Domiciliarios</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="material-icons">check_circle</i>
+          <div class="stat-info">
+            <h3>{{ getDomiciliariosActivos() }}</h3>
+            <p>Activos</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="material-icons">delivery_dining</i>
+          <div class="stat-info">
+            <h3>{{ getDomiciliariosOcupados() }}</h3>
+            <p>En Servicio</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="material-icons">star</i>
+          <div class="stat-info">
+            <h3>{{ getCalificacionPromedio() }}</h3>
+            <p>Calificación Promedio</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="domiciliarios-grid" *ngIf="!loadingDomiciliarios">
+        <div class="domiciliario-card" *ngFor="let domiciliario of domiciliarios" [ngClass]="{ 'ocupado': domiciliario.pedidosAsignados > 0 }">
+          <div class="domiciliario-header">
+            <div class="domiciliario-avatar">
+              <i class="material-icons">person</i>
+            </div>
+            <div class="domiciliario-name">
+              <h4>{{ domiciliario.nombre }}</h4>
+              <p>{{ domiciliario.telefono }}</p>
+            </div>
+            <div class="domiciliario-status" [ngClass]="{ 'active': domiciliario.disponible, 'busy': domiciliario.pedidosAsignados > 0 }">
+              {{ domiciliario.pedidosAsignados > 0 ? 'En Servicio' : (domiciliario.disponible ? 'Disponible' : 'Inactivo') }}
+            </div>
+          </div>
+
+          <div class="domiciliario-info">
+            <p><i class="material-icons">motorcycle</i> {{ getTipoVehiculoLabel(domiciliario.vehiculo) }}</p>
+            <p><i class="material-icons">star</i> Calificación: {{ domiciliario.calificacion || 'N/A' }}/5</p>
+            <p><i class="material-icons">delivery_dining</i> Pedidos asignados: {{ domiciliario.pedidosAsignados }}</p>
+            <p *ngIf="domiciliario.ubicacionActual">
+              <i class="material-icons">location_on</i>
+              Ubicación: {{ domiciliario.ubicacionActual.latitud.toFixed(4) }}, {{ domiciliario.ubicacionActual.longitud.toFixed(4) }}
+            </p>
+          </div>
+
+          <div class="domiciliario-actions">
+            <button class="action-btn"
+                    [ngClass]="domiciliario.disponible ? 'deactivate-btn' : 'activate-btn'"
+                    (click)="toggleEstadoDomiciliario(domiciliario.id)">
+              <i class="material-icons">{{ domiciliario.disponible ? 'pause' : 'play_arrow' }}</i>
+              {{ domiciliario.disponible ? 'Desactivar' : 'Activar' }}
+            </button>
+            <button class="action-btn info-btn" (click)="verDetalleDomiciliario(domiciliario.id)">
+              <i class="material-icons">info</i> Detalles
+            </button>
+            <button class="action-btn track-btn" (click)="verUbicacionDomiciliario(domiciliario.id)"
+                    [disabled]="!domiciliario.disponible">
+              <i class="material-icons">location_on</i> Ubicar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="loadingDomiciliarios">
+        <p>Cargando domiciliarios...</p>
+      </div>
+    </div>
+
+    <!-- Mapa en Tiempo Real -->
+    <div *ngIf="activeTab === 'mapa'" class="mapa-section">
+      <div class="section-header">
+        <h3>Mapa en Tiempo Real</h3>
+        <div class="mapa-controles">
+          <button class="control-btn" (click)="actualizarMapa()">
+            <i class="material-icons">refresh</i> Actualizar
+          </button>
+          <button class="control-btn" (click)="centrarMapa()">
+            <i class="material-icons">my_location</i> Centrar
+          </button>
+        </div>
+      </div>
+
+      <div class="mapa-container">
+        <div class="mapa-placeholder">
+          <i class="material-icons">map</i>
+          <p>Mapa interactivo en tiempo real</p>
+          <p>Aquí se mostraría un mapa con la ubicación de todos los domiciliarios activos y las rutas de entrega</p>
+          <div class="leyenda-mapa">
+            <div class="leyenda-item">
+              <div class="leyenda-color disponible"></div>
+              <span>Domiciliarios disponibles</span>
+            </div>
+            <div class="leyenda-item">
+              <div class="leyenda-color ocupado"></div>
+              <span>Domiciliarios en servicio</span>
+            </div>
+            <div class="leyenda-item">
+              <div class="leyenda-color destino"></div>
+              <span>Destinos de entrega</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de domiciliarios activos -->
+      <div class="domiciliarios-activos">
+        <h4>Domiciliarios Activos</h4>
+        <div class="activos-list">
+          <div class="activo-item" *ngFor="let domiciliario of getDomiciliariosActivosList()">
+            <div class="activo-info">
+              <strong>{{ domiciliario.nombre }}</strong>
+              <span class="status" [ngClass]="{ 'busy': domiciliario.pedidosAsignados > 0 }">
+                {{ domiciliario.pedidosAsignados > 0 ? 'En servicio' : 'Disponible' }}
+              </span>
+            </div>
+            <div class="activo-location" *ngIf="domiciliario.ubicacionActual">
+              Lat: {{ domiciliario.ubicacionActual.latitud.toFixed(4) }},
+              Lng: {{ domiciliario.ubicacionActual.longitud.toFixed(4) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuración -->
+    <div *ngIf="activeTab === 'configuracion'" class="configuracion-section">
+      <div class="section-header">
+        <h3>Configuración de Domicilios</h3>
+        <button class="save-btn" (click)="guardarConfiguracion()" [disabled]="guardandoConfig">
+          <i class="material-icons">{{ guardandoConfig ? 'hourglass_empty' : 'save' }}</i>
+          {{ guardandoConfig ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </div>
+
+      <div class="config-form">
+        <div class="config-section">
+          <h4>Configuración General</h4>
+          <div class="form-group">
+            <label for="distanciaMaxima">Distancia máxima (km):</label>
+            <input type="number" id="distanciaMaxima" [(ngModel)]="configuracion.distanciaMaxima"
+                   min="1" max="50" step="0.5">
+          </div>
+          <div class="form-group">
+            <label for="costoBase">Costo base de envío:</label>
+            <input type="number" id="costoBase" [(ngModel)]="configuracion.costoBase"
+                   min="0" step="500">
+          </div>
+          <div class="form-group">
+            <label for="costoPorKm">Costo por kilómetro:</label>
+            <input type="number" id="costoPorKm" [(ngModel)]="configuracion.costoPorKm"
+                   min="0" step="100">
+          </div>
+          <div class="form-group">
+            <label for="tiempoEstimadoPorKm">Tiempo estimado por km (min):</label>
+            <input type="number" id="tiempoEstimadoPorKm" [(ngModel)]="configuracion.tiempoEstimadoPorKm"
+                   min="1" max="60">
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h4>Horarios de Servicio</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="horarioInicio">Hora de inicio:</label>
+              <input type="time" id="horarioInicio" [(ngModel)]="configuracion.horarioInicio">
+            </div>
+            <div class="form-group">
+              <label for="horarioFin">Hora de fin:</label>
+              <input type="time" id="horarioFin" [(ngModel)]="configuracion.horarioFin">
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h4>Zonas de Cobertura</h4>
+          <div class="zonas-list">
+            <div class="zona-item" *ngFor="let zona of configuracion.zonasCovertura; let i = index">
+              <input type="text" [(ngModel)]="zona.nombre" placeholder="Nombre de la zona">
+              <input type="number" [(ngModel)]="zona.costoAdicional" placeholder="Costo adicional" min="0" step="500">
+              <label>
+                <input type="checkbox" [(ngModel)]="zona.disponible">
+                Disponible
+              </label>
+              <button class="remove-btn" (click)="eliminarZona(i)">
+                <i class="material-icons">delete</i>
+              </button>
+            </div>
+            <button class="add-zone-btn" (click)="agregarZona()">
+              <i class="material-icons">add</i> Agregar Zona
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes de estado -->
+    <div class="status-message" *ngIf="mensajeEstado" [ngClass]="tipoMensaje">
+      <p>{{ mensajeEstado }}</p>
+    </div>
+  </div>
+</div>

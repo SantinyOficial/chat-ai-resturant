@@ -20,7 +20,10 @@
               <h5>Ítems:</h5>
               <ul>
                 <li *ngFor="let item of menu.items">
-                  <strong>{{ item.nombre }}</strong> ({{ item.categoria }}): {{ item.descripcion }}
+                  <strong>{{ item.nombre }}</strong>
+                  ({{ item.categoria }}) -
+                  ${{ item.precio !== undefined ? item.precio.toLocaleString() : 'Sin precio' }}:
+                  {{ item.descripcion }}
                 </li>
               </ul>
             </div>
@@ -50,7 +53,10 @@
               <h5>Ítems:</h5>
               <ul>
                 <li *ngFor="let item of menu.items">
-                  <strong>{{ item.nombre }}</strong> ({{ item.categoria }}): {{ item.descripcion }}
+                  <strong>{{ item.nombre }}</strong>
+                  ({{ item.categoria }}) -
+                  ${{ item.precio !== undefined ? item.precio.toLocaleString() : 'Sin precio' }}:
+                  {{ item.descripcion }}
                 </li>
               </ul>
             </div>
@@ -64,11 +70,14 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="botones-accion">
+      </div>      <div class="botones-accion">
         <button class="btn-crear" (click)="mostrarFormularioCreacion()">
           <i class="material-icons">add</i> Crear Nuevo Menú
+        </button>
+        <button class="btn-predeterminados" [disabled]="cargandoElementos" (click)="crearElementosPredeterminados()">
+          <i class="material-icons">auto_awesome</i>
+          <span *ngIf="!cargandoElementos">Crear Elementos Predeterminados</span>
+          <span *ngIf="cargandoElementos">Creando elementos...</span>
         </button>
       </div>
 
@@ -113,14 +122,17 @@
                 <div class="form-group">
                   <label>Descripción:</label>
                   <input type="text" [(ngModel)]="item.descripcion" placeholder="Descripción del ítem" required>
-                </div>
-                <div class="form-group">
+                </div>                <div class="form-group">
                   <label>Categoría:</label>
                   <select [(ngModel)]="item.categoria" required>
                     <option value="entrada">Entrada</option>
                     <option value="plato principal">Plato Principal</option>
                     <option value="postre">Postre</option>
                   </select>
+                </div>
+                <div class="form-group">
+                  <label>Precio:</label>
+                  <input type="number" [(ngModel)]="item.precio" min="0" step="0.01" placeholder="0.00" required>
                 </div>
                 <button class="btn-remove-item" (click)="eliminarItem(i)">
                   <i class="material-icons">remove_circle</i>

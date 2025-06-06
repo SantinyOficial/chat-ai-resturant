@@ -1,0 +1,84 @@
+<div class="container">
+  <h2><i class="material-icons">support_agent</i> Chat Asistente</h2>
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="agent-info">
+        <i class="material-icons agent-avatar">restaurant</i>
+        <span class="agent-name">Asistente de Banquetes Peter</span>
+      </div>
+      <span [class]="'status ' + (error ? 'offline' : 'online')">
+        {{ error ? 'Sin conexión' : 'En línea' }}
+      </span>
+    </div>
+
+    <div class="chat-messages" #scrollContainer>
+      <div class="message bot">
+        <div class="message-bubble">
+          <p>Bienvenido al asistente de Banquetes Peter. ¿En qué puedo ayudarte hoy?</p>
+        </div>
+        <span class="message-time">Ahora</span>
+      </div>
+
+      <div *ngFor="let message of messages" [class]="'message ' + message.sender">
+        <div class="message-bubble">
+          <p>{{ message.text }}</p>
+        </div>
+        <span class="message-time">{{ message.time }}</span>
+      </div>
+
+      <div *ngIf="loading" class="message bot loading">
+        <div class="message-bubble">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+    </div>
+
+    <div class="chat-actions">
+      <button class="action-button" (click)="abrirRealizarPedido()">
+        <i class="material-icons">restaurant_menu</i>
+        Realizar Pedido
+      </button>
+      <button class="action-button" (click)="sendQuickQuestion('¿Cuál es el menú del día?')">
+        <i class="material-icons">menu_book</i>
+        Ver Menú
+      </button>
+      <button class="action-button" (click)="sendQuickQuestion('¿Cuál es el estado de mi pedido?')">
+        <i class="material-icons">local_shipping</i>
+        Estado de Pedido
+      </button>
+      <button class="action-button" (click)="sendQuickQuestion('¿Cuáles son los horarios del restaurante?')">
+        <i class="material-icons">access_time</i>
+        Horarios
+      </button>
+    </div>
+
+    <div class="chat-input">
+      <input
+        type="text"
+        [(ngModel)]="userMessage"
+        placeholder="Escribe tu mensaje aquí..."
+        (keyup.enter)="sendMessage()"
+        [disabled]="loading"
+      >
+      <button (click)="sendMessage()" [disabled]="loading || !userMessage.trim()">
+        <i class="material-icons">send</i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para realizar pedido -->
+<app-realizar-pedido
+  *ngIf="mostrarRealizarPedido"
+  [clienteId]="clienteId"
+  (pedidoCreado)="onPedidoCreado($event)"
+  (cerrarModal)="cerrarRealizarPedido()">
+</app-realizar-pedido>

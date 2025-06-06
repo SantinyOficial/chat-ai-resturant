@@ -6,17 +6,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 
 import com.chat.peter.model.Pedido;
 import com.chat.peter.model.EstadoPedido;
+import com.chat.peter.model.EstadoPagoPedido;
 import com.chat.peter.service.PedidoService;
+import com.chat.peter.service.EstadoSincronizacionService;
+import com.chat.peter.dto.EstadoSincronizadoDto;
 
 @RestController
 @RequestMapping("/api/pedidos")
 public class PedidoController {
+      @Autowired
+    private PedidoService pedidoService;
     
     @Autowired
-    private PedidoService pedidoService;
+    private EstadoSincronizacionService estadoSincronizacionService;
     
     @GetMapping
     public ResponseEntity<List<Pedido>> getAllPedidos() {
@@ -95,12 +102,90 @@ public class PedidoController {
             ResponseEntity.noContent().build() : 
             ResponseEntity.notFound().build();
     }
-    
-    @PutMapping("/{id}/cancelar")
+      @PutMapping("/{id}/cancelar")
     public ResponseEntity<Pedido> cancelarPedido(@PathVariable String id) {
         Pedido pedidoCancelado = pedidoService.cancelarPedido(id);
         return pedidoCancelado != null ? 
             ResponseEntity.ok(pedidoCancelado) : 
             ResponseEntity.notFound().build();
+    }
+    
+    // ============ ENDPOINTS DE SINCRONIZACIÓN ============
+      /**
+     * Actualizar estado completo de un pedido (estado + pago)
+     */
+    @PutMapping("/{id}/estado-completo")
+    public ResponseEntity<EstadoSincronizadoDto> actualizarEstadoCompleto(
+            @PathVariable String id,
+            @RequestBody EstadoSincronizadoDto estadoRequest) {
+        try {
+            EstadoSincronizadoDto estadoActualizado = estadoSincronizacionService.actualizarEstadoCompleto(
+                id, 
+                estadoRequest.getEstadoPedido(), 
+                estadoRequest.getEstadoPago()
+            );
+            return ResponseEntity.ok(estadoActualizado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Obtener estado sincronizado específico de un pedido
+     */
+    @GetMapping("/{id}/estado")
+    public ResponseEntity<EstadoSincronizadoDto> obtenerEstadoSincronizado(@PathVariable String id) {
+        EstadoSincronizadoDto estado = estadoSincronizacionService.obtenerEstado(id);
+        return estado != null ? 
+            ResponseEntity.ok(estado) : 
+            ResponseEntity.notFound().build();
+    }
+    
+    /**
+     * Obtener cambios desde una fecha específica
+     */
+    @GetMapping("/cambios-desde/{timestamp}")
+    public ResponseEntity<List<EstadoSincronizadoDto>> obtenerCambiosDesde(@PathVariable String timestamp) {
+        try {
+            LocalDateTime fecha = LocalDateTime.parse(timestamp);
+            List<EstadoSincronizadoDto> cambios = estadoSincronizacionService.obtenerCambiosDesde(fecha);
+            return ResponseEntity.ok(cambios);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Obtener todos los estados completos para sincronización total
+     */
+    @GetMapping("/estados-completos")
+    public ResponseEntity<List<EstadoSincronizadoDto>> obtenerTodosLosEstados() {
+        List<EstadoSincronizadoDto> estados = estadoSincronizacionService.obtenerTodosLosEstados();
+        return ResponseEntity.ok(estados);
+    }
+    
+    /**
+     * Actualizar solo estado de pago de un pedido
+     */
+    @PutMapping("/{id}/pago-estado")
+    public ResponseEntity<EstadoSincronizadoDto> actualizarEstadoPago(
+            @PathVariable String id,
+            @RequestParam String estadoPago) {
+        try {
+            EstadoPagoPedido estado = EstadoPagoPedido.valueOf(estadoPago.toUpperCase());
+            EstadoSincronizadoDto estadoActualizado = estadoSincronizacionService.actualizarEstadoPago(id, estado);
+            return ResponseEntity.ok(estadoActualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Limpiar estados antiguos (mantenimiento)
+     */
+    @PostMapping("/limpiar-estados")
+    public ResponseEntity<Void> limpiarEstadosAntiguos() {
+        estadoSincronizacionService.limpiarEstadosAntiguos();
+        return ResponseEntity.ok().build();
     }
 }

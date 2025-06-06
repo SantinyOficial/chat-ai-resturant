@@ -10,6 +10,11 @@ public class PedidoItem {
     private int cantidad;
     private double precio;
     
+    // Propiedades específicas para cocina
+    private String estado; // Estado específico del item en cocina
+    private String observaciones; // Observaciones específicas del item
+    private Integer tiempoPreparacion; // Tiempo estimado de preparación en minutos
+    
     public PedidoItem() {
         this.cantidad = 1;
     }
@@ -68,5 +73,29 @@ public class PedidoItem {
 
     public void setPrecio(double precio) {
         this.precio = precio;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public Integer getTiempoPreparacion() {
+        return tiempoPreparacion;
+    }
+
+    public void setTiempoPreparacion(Integer tiempoPreparacion) {
+        this.tiempoPreparacion = tiempoPreparacion;
     }
 }
